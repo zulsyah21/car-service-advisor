@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Services - Service Advisor</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <header class="navbar" id="main-navbar">
+        <a href="index.html" class="nav-brand" id="nav-brand-link">
+            <img src="images/perodua_logo.png" alt="Perodua Logo">
+        </a>
+        <nav class="nav-links" id="main-nav-links">
+            <a href="index.html">Home</a>
+            <a href="quotes.html">Quotes</a>
+            <a href="knowledge.html">Knowledge Hub</a>
+            <a href="locate.html">Locate</a>
+        </nav>
+        <div class="nav-auth" id="main-nav-auth">
+            <a href="signin.html">Sign In</a>
+        </div>
+    </header>
+
+    <div class="main-content">
+        <div class="page-container" style="max-width: 900px; text-align: center;">
+            <h2 class="section-title"><i class="fas fa-tools"></i> Browse Vehicle Services</h2>
+            <p style="margin-bottom: 2rem; color: #555;">Select a system to explore our detailed maintenance guides and component breakdowns.</p>
+            
+            <div class="services-grid">
+                <a href="knowledge.html?category=engine" class="service-btn">
+                    <i class="fas fa-oil-can"></i>
+                    <span>Engine</span>
+                </a>
+                <a href="knowledge.html?category=brake" class="service-btn">
+                    <i class="fas fa-compact-disc"></i>
+                    <span>Brake</span>
+                </a>
+                <a href="knowledge.html?category=wheels" class="service-btn">
+                    <i class="fas fa-dharmachakra"></i>
+                    <span>Wheels</span>
+                </a>
+                <a href="knowledge.html?category=battery" class="service-btn">
+                    <i class="fas fa-car-battery"></i>
+                    <span>Battery</span>
+                </a>
+                <a href="knowledge.html?category=suspension" class="service-btn">
+                    <i class="fas fa-cogs"></i>
+                    <span>Suspension</span>
+                </a>
+                <a href="knowledge.html?category=aircond" class="service-btn">
+                    <i class="fas fa-snowflake"></i>
+                    <span>Air Cond</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chatbot -->
+    <div class="chatbot-toggle">
+        <i class="fas fa-comment-dots"></i>
+    </div>
+    <div class="chatbot-container">
+        <div class="chatbot-header">
+            <span>24/7 AI CHATBOT</span>
+            <i class="fas fa-times close-chat" style="cursor:pointer; opacity:0.7;"></i>
+        </div>
+        <div class="chatbot-body" id="chat-body">
+            <div class="msg bot-msg">Hello, how can I help you?</div>
+        </div>
+        <div class="chatbot-footer">
+            <input type="text" id="chat-input-text" placeholder="Type your message">
+            <button id="chat-send-btn"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
+
+    <script src="js/db-init.js"></script>
+    <script src="js/script.js"></script>
+</body>
+</html>

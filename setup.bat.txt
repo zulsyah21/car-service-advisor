@@ -1,0 +1,41 @@
+@echo off
+rem ------------------------------------------------------------
+rem  Web‑Based Automated Car Service Advisor – Local Setup
+rem ------------------------------------------------------------
+
+rem === 1️⃣ Change to the project directory (adjust if you move the folder) ===
+cd /d "C:\Users\ASUS\Documents\UiTM (DEGREE)\SEM 5\FYP\Web-Based Automated Car Service Advisor"
+
+rem === 2️⃣ Install Node dependencies (full path to npm) ===
+rem Adjust the path if Node is installed elsewhere.
+set NPM_PATH="C:\Program Files\nodejs\npm.cmd"
+if not exist %NPM_PATH% (
+    echo npm not found at %NPM_PATH%
+    pause
+    exit /b 1
+)
+%NPM_PATH% install
+if errorlevel 1 (
+    echo npm install failed.
+    pause
+    exit /b 1
+)
+
+rem === 3️⃣ Create the local MySQL database (full path to mysql client) ===
+rem Adjust the path below if your MySQL installation lives elsewhere.
+set MYSQL_PATH="C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe"
+if not exist %MYSQL_PATH% (
+    echo mysql client not found at %MYSQL_PATH%
+    pause
+    exit /b 1
+)
+%MYSQL_PATH% -u root -p < db\init.sql
+if errorlevel 1 (
+    echo MySQL script execution failed.
+    pause
+    exit /b 1
+)
+
+rem === 4️⃣ Start the dev server (auto‑restart with nodemon) ===
+%NPM_PATH% run dev
+rem The server will keep running; close the window to stop it.

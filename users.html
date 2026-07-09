@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Users Management - Service Advisor</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        .admin-table th, .admin-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+            color: black;
+        }
+        .admin-table th {
+            background-color: #444;
+            color: white;
+        }
+        .admin-input {
+            width: 100%;
+            padding: 5px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 400px;
+            color: black;
+        }
+        .modal-content h3 {
+            margin-top: 0;
+            color: var(--primary-red);
+        }
+        .form-group {
+            margin-bottom: 1rem;
+            text-align: left;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+            color: black;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <header class="navbar" id="main-navbar">
+        <a href="index.html" class="nav-brand" id="nav-brand-link">
+            <img src="images/perodua_logo.png" alt="Perodua Logo">
+        </a>
+        <nav class="nav-links" id="main-nav-links">
+            <a href="index.html">Home</a>
+            <a href="quotes.html">Quotes</a>
+            <a href="knowledge.html">Knowledge Hub</a>
+            <a href="locate.html">Locate</a>
+        </nav>
+        <div class="nav-auth" id="main-nav-auth">
+            <a href="signin.html">Sign In</a>
+        </div>
+    </header>
+
+    <div class="main-content">
+        <div class="page-container" style="max-width: 900px;">
+            <h2 class="section-title" style="color:var(--primary-red);"><i class="fas fa-users-cog"></i> Users Management</h2>
+            
+            <div style="background:white; padding:1.5rem; border-radius:8px; border:1px solid #ddd; margin-top: 2rem; color: black;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1rem;">
+                    <h3 style="color:var(--primary-red);"><i class="fas fa-users-cog"></i> Users Management Database</h3>
+                    <button class="btn-edit" onclick="openAddEmployeeModal()"><i class="fas fa-user-plus"></i> Register New User</button>
+                </div>
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>User ID</th>
+                            <th>Username</th>
+                            <th>Name</th>
+                            <th>Role / Position</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-users-tbody">
+                        <!-- Populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Add User Modal -->
+    <div id="add-employee-modal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <h3><i class="fas fa-user-plus"></i> Register New Account</h3>
+            <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" id="add-emp-name" placeholder="John Doe">
+            </div>
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" id="add-emp-username" placeholder="johndoe">
+            </div>
+            <div class="form-group">
+                <label>Email Address</label>
+                <input type="email" id="add-emp-email" placeholder="john@example.com">
+            </div>
+            <div class="form-group">
+                <label>Phone Number</label>
+                <input type="text" id="add-emp-phone" placeholder="0123456789">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="add-emp-password">
+            </div>
+            <div class="form-group">
+                <label>Account Role</label>
+                <select id="add-emp-role">
+                    <option value="Customer">Customer</option>
+                    <option value="Employee">Employee</option>
+                    <option value="Admin">Admin</option>
+                </select>
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 1.5rem;">
+                <button class="btn-edit" style="flex:1;" id="save-employee-btn"><i class="fas fa-check"></i> Register Account</button>
+                <button class="btn-danger" style="flex:1;" onclick="closeAddEmployeeModal()"><i class="fas fa-times"></i> Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chatbot (Included everywhere) -->
+    <div class="chatbot-toggle">
+        <i class="fas fa-comment-dots"></i>
+    </div>
+    <div class="chatbot-container">
+        <div class="chatbot-header">
+            <span>24/7 AI CHATBOT</span>
+            <i class="fas fa-times close-chat" style="cursor:pointer; opacity:0.7;"></i>
+        </div>
+        <div class="chatbot-body" id="chat-body">
+            <div class="msg bot-msg">Hello, how can I help you?</div>
+        </div>
+        <div class="chatbot-footer">
+            <input type="text" id="chat-input-text" placeholder="Type your message">
+            <button id="chat-send-btn"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
+
+    <script src="js/db-init.js"></script>
+    <script src="js/script.js"></script>
+    <script>
+        // Ensure only Admin can access
+        const sessionUser = JSON.parse(localStorage.getItem('currentUser'));
+        if (!sessionUser) {
+            alert('Access Denied. Please log in.');
+            window.location.href = 'index.html';
+        } else {
+            const employees = getTable('employeeTable');
+            const emp = employees.find(e => e.userID === sessionUser.userID);
+            if (!emp || emp.position !== 'Admin') {
+                alert('Access Denied. Administrator clearance required.');
+                window.location.href = 'index.html';
+            }
+        }
+
+        async function renderUsersTable() {
+            const tbody = document.getElementById('admin-users-tbody');
+            tbody.innerHTML = '<tr><td colspan="5">Loading users...</td></tr>';
+            
+            try {
+                const [usersRes, employeesRes, customersRes] = await Promise.all([
+                    fetch('/api/users'),
+                    fetch('/api/employees'),
+                    fetch('/api/customers')
+                ]);
+                
+                const users = await usersRes.json();
+                const employees = await employeesRes.json();
+                const customers = await customersRes.json();
+                
+                tbody.innerHTML = '';
+                users.forEach(u => {
+                    let roleStr = "Unknown";
+                    const isEmp = employees.find(e => e.userID === u.userID);
+                    if (isEmp) {
+                        roleStr = isEmp.position; // 'Admin' or 'Employee'
+                    } else if (customers.find(c => c.userID === u.userID)) {
+                        roleStr = "Customer";
+                    } else {
+                        roleStr = "Customer (No quotes yet)";
+                    }
+
+                    let actionBtn = `<button class="btn-danger" style="padding: 8px 12px; border-radius:4px;" onclick="deleteUser('${u.userID}', '${u.username}')"><i class="fas fa-trash"></i> Delete User</button>`;
+                    if (u.userID === sessionUser.userID) {
+                        actionBtn = `<span style="color:#888; font-size:0.9rem;">(Current User)</span>`;
+                    }
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${u.userID}</td>
+                        <td>${u.username}</td>
+                        <td>${u.fullName}</td>
+                        <td>${roleStr}</td>
+                        <td>${actionBtn}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (err) {
+                console.error(err);
+                tbody.innerHTML = '<tr><td colspan="5">Failed to load users from database.</td></tr>';
+            }
+        }
+
+        async function deleteUser(userID, username) {
+            if(confirm(`Are you absolutely sure you want to delete user account '${username}'? This action cannot be undone.`)) {
+                try {
+                    const response = await fetch(`/api/users/${userID}`, { method: 'DELETE' });
+                    if (!response.ok) throw new Error('Failed to delete user');
+                    alert('Account deleted successfully!');
+                    await renderUsersTable();
+                } catch (err) {
+                    console.error(err);
+                    alert('Error: Failed to delete user from database.');
+                }
+            }
+        }
+
+        function openAddEmployeeModal() {
+            document.getElementById('add-employee-modal').style.display = 'flex';
+        }
+
+        function closeAddEmployeeModal() {
+            document.getElementById('add-employee-modal').style.display = 'none';
+        }
+
+        document.getElementById('save-employee-btn').addEventListener('click', async () => {
+            const name = document.getElementById('add-emp-name').value.trim();
+            const username = document.getElementById('add-emp-username').value.trim();
+            const email = document.getElementById('add-emp-email').value.trim();
+            const phone = document.getElementById('add-emp-phone').value.trim();
+            const password = document.getElementById('add-emp-password').value;
+            const role = document.getElementById('add-emp-role').value;
+
+            if (!name || !username || !email || !password) {
+                alert("Please fill in all required fields (Name, Username, Email, Password).");
+                return;
+            }
+
+            const newUserID = "u" + Date.now().toString(36);
+
+            try {
+                const response = await fetch('/api/users/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userID: newUserID,
+                        username: username,
+                        fullName: name,
+                        email: email,
+                        password: password,
+                        phoneNum: phone,
+                        role: role
+                    })
+                });
+
+                if (response.ok) {
+                    alert("Account registered successfully!");
+                    closeAddEmployeeModal();
+                    await renderUsersTable();
+                } else {
+                    const err = await response.json();
+                    alert(err.error || "Registration failed.");
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Error: Failed to register user in database.");
+            }
+            
+            document.getElementById('add-emp-name').value = '';
+            document.getElementById('add-emp-username').value = '';
+            document.getElementById('add-emp-email').value = '';
+            document.getElementById('add-emp-phone').value = '';
+            document.getElementById('add-emp-password').value = '';
+        });
+
+        renderUsersTable();
+    </script>
+</body>
+</html>

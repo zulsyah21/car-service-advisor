@@ -1,0 +1,1471 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maintenance Knowledge Hub - Service Advisor</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Override global body styles for natural page scrolling */
+        body {
+            overflow-y: auto !important;
+            height: auto !important;
+            display: block !important;
+        }
+
+        /* Knowledge Hub Premium Layout */
+        .kh-page {
+            background: var(--bg-dark);
+            background-image: radial-gradient(circle at top right, rgba(227, 24, 55, 0.05), transparent 50%),
+                              radial-gradient(circle at bottom left, rgba(227, 24, 55, 0.05), transparent 50%);
+            padding: 4rem 2rem;
+            min-height: 100vh;
+        }
+
+        .kh-header {
+            text-align: center;
+            margin-bottom: 5rem;
+        }
+
+        .kh-header h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 1rem;
+        }
+
+        .kh-header h1 span {
+            color: var(--primary-accent);
+        }
+
+        .kh-list {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 6rem;
+        }
+
+        .kh-item {
+            display: flex;
+            align-items: center;
+            gap: 4rem;
+            position: relative;
+        }
+
+        /* Alternate layout for even items */
+        .kh-item:nth-child(even) {
+            flex-direction: row-reverse;
+        }
+
+        .kh-item::after {
+            content: '';
+            position: absolute;
+            bottom: -3rem;
+            left: 0;
+            width: 100%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--border-color), transparent);
+        }
+
+        .kh-item:last-child::after {
+            display: none;
+        }
+
+        .kh-content {
+            flex: 1;
+            position: relative;
+        }
+
+        .kh-number {
+            font-size: 3rem;
+            font-weight: 300;
+            color: rgba(255,255,255,0.2);
+            margin-bottom: 0.5rem;
+            font-family: 'Outfit', sans-serif;
+            line-height: 1;
+        }
+
+        .kh-title {
+            font-size: 2.2rem;
+            margin-bottom: 1.5rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
+        .kh-desc {
+            color: var(--text-muted);
+            line-height: 1.8;
+            font-size: 1.1rem;
+        }
+
+        .kh-img-wrapper {
+            flex: 1.2;
+            position: relative;
+            border-radius: 4px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            aspect-ratio: 16 / 10;
+            min-height: 280px;
+            max-height: 320px;
+        }
+
+        .kh-img-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            transition: transform 0.7s ease;
+        }
+
+        .kh-img-wrapper:hover img {
+            transform: scale(1.05);
+        }
+
+        .btn-more {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            border: 1px solid var(--text-muted);
+            color: var(--text-light);
+            text-decoration: none;
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            text-align: center;
+            line-height: 1.3;
+            margin-top: 1.5rem;
+            background: var(--bg-dark);
+            z-index: 10;
+        }
+
+        .btn-more:hover {
+            border-color: var(--primary-accent);
+            background: var(--primary-accent);
+            color: white;
+            box-shadow: var(--glow);
+            transform: scale(1.1);
+        }
+
+        .back-to-top {
+            position: fixed;
+            right: 37.5px;
+            bottom: 37.5px; /* Default aligned with chatbot-toggle center */
+            width: 50px;
+            height: 50px;
+            background-color: var(--primary-accent);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 1.2rem;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s, transform 0.3s, background-color 0.3s;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .back-to-top.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .back-to-top:hover {
+            background-color: var(--accent-hover);
+            transform: translateY(-3px);
+        }
+
+        @media (max-width: 900px) {
+            .kh-item, .kh-item:nth-child(even) {
+                flex-direction: column;
+                text-align: center;
+                gap: 2rem;
+            }
+            .btn-more {
+                margin-top: 1.5rem;
+            }
+        }
+
+        .kh-details-container {
+            display: none;
+            margin-top: 2rem;
+            padding: 2rem;
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            border-left: 4px solid var(--primary-accent);
+            animation: fadeIn 0.4s ease forwards;
+        }
+
+        /* Car Diagram Styles */
+        .car-diagram-section {
+            max-width: 1000px;
+            margin: 0 auto 5rem auto;
+            position: relative;
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+        }
+
+        .car-diagram-container {
+            position: relative;
+            width: 100%;
+            overflow: hidden;
+            border-radius: 8px;
+        }
+
+        .car-diagram-container img {
+            width: 100%;
+            display: block;
+            filter: brightness(0.85);
+        }
+
+        .hotspot {
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            background: var(--primary-accent);
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 10px rgba(227, 24, 55, 0.6);
+            transition: transform 0.3s ease;
+        }
+
+        .hotspot::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: var(--primary-accent);
+            animation: pulse 2s infinite;
+            z-index: -1;
+        }
+
+        .hotspot i {
+            color: white;
+            font-size: 10px;
+        }
+
+        .hotspot:hover {
+            transform: scale(1.3);
+        }
+
+        .hotspot-label {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.85);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            white-space: nowrap;
+            pointer-events: none;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+            bottom: 35px;
+            left: 50%;
+            transform: translateX(-50%) translateY(10px);
+            border: 1px solid var(--primary-accent);
+        }
+
+        .hotspot:hover .hotspot-label {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.8; }
+            100% { transform: scale(2.5); opacity: 0; }
+        }
+
+        /* ─── Car Type Tab Selector ─────────────────────────────────────── */
+        .car-type-tabs {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 1.8rem;
+        }
+
+        .car-type-tab {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 12px 24px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: all 0.3s ease;
+            min-width: 100px;
+        }
+
+        .car-type-tab:hover {
+            border-color: var(--primary-accent);
+            color: var(--text-light);
+            background: rgba(227,24,55,0.04);
+        }
+
+        .car-type-tab.active {
+            background: var(--primary-accent);
+            border-color: var(--primary-accent);
+            color: white;
+            box-shadow: var(--glow);
+        }
+
+        .car-type-icon {
+            font-size: 1.5rem;
+            line-height: 1;
+        }
+
+        .car-type-icon img {
+            width: 72px;
+            height: 42px;
+            object-fit: contain;
+            display: block;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+            transition: transform 0.3s ease, filter 0.3s ease;
+        }
+
+        .car-type-tab:hover .car-type-icon img {
+            transform: scale(1.08);
+        }
+
+        .car-type-tab.active .car-type-icon img {
+            filter: drop-shadow(0 0 6px rgba(255,255,255,0.5)) brightness(1.1);
+        }
+
+        .car-type-label {
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .car-model-name {
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+
+        .car-diagram-container {
+            animation: fadeInDiagram 0.4s ease forwards;
+        }
+
+        @keyframes fadeInDiagram {
+            from { opacity: 0; transform: translateY(8px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .kh-detail-block {
+            margin-bottom: 1.5rem;
+        }
+        .kh-detail-block:last-child {
+            margin-bottom: 0;
+        }
+        .kh-detail-block h3 {
+            color: var(--text-light);
+            font-size: 1.3rem;
+            margin-bottom: 0.5rem;
+        }
+        .kh-detail-block p {
+            color: var(--text-muted);
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- NEW UPGRADED KNOWLEDGE HUB STYLES --- */
+        
+        /* 2-Column Dashboard Grid */
+        .kh-dash-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: 2rem;
+            max-width: 1000px;
+            margin: 0 auto 4rem auto;
+        }
+        
+        @media (max-width: 900px) {
+            .kh-dash-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* Premium Glass Card */
+        .premium-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: var(--shadow);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .premium-card:hover {
+            border-color: rgba(227, 24, 55, 0.3);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.9), 0 0 15px rgba(227, 24, 55, 0.05);
+        }
+        
+        .card-header-icon {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 1rem;
+        }
+        
+        .card-header-icon i {
+            color: var(--primary-accent);
+            font-size: 1.8rem;
+            text-shadow: var(--glow);
+        }
+        
+        .card-header-icon h3 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin: 0;
+            color: var(--text-light);
+        }
+        
+        /* Progress Tracker Styles */
+        .progress-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .progress-bar-container {
+            width: 100%;
+            height: 14px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #e31837, #ff4d6d);
+            border-radius: 20px;
+            box-shadow: 0 0 10px rgba(227, 24, 55, 0.8);
+            transition: width 1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        
+        .badge-display {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 8px;
+            padding: 1.2rem;
+            border: 1px dashed rgba(255, 255, 255, 0.1);
+        }
+        
+        .badge-title {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+        }
+        
+        .badge-value {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--text-light);
+            text-transform: uppercase;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .badge-glow-novice { color: #888888; }
+        .badge-glow-informed { color: #4caf50; text-shadow: 0 0 12px rgba(76, 175, 80, 0.5); }
+        .badge-glow-enthusiast { color: #2196f3; text-shadow: 0 0 12px rgba(33, 150, 243, 0.5); }
+        .badge-glow-pro { color: #e31837; text-shadow: 0 0 15px rgba(227, 24, 55, 0.6); }
+        
+        /* Interactive Diagnostic Guide Styles */
+        .diagnostic-step {
+            animation: fadeIn 0.4s ease forwards;
+        }
+        
+        .diagnostic-options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 1.5rem;
+        }
+        
+        .diagnostic-btn {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            color: var(--text-light);
+            padding: 12px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: left;
+            font-size: 0.95rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.3s ease;
+        }
+        
+        .diagnostic-btn:hover {
+            background: rgba(227, 24, 55, 0.05);
+            border-color: var(--primary-accent);
+            transform: translateX(5px);
+        }
+        
+        .diagnostic-btn i {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            transition: transform 0.3s ease;
+        }
+        
+        .diagnostic-btn:hover i {
+            color: var(--primary-accent);
+            transform: translateX(3px);
+        }
+        
+        .diagnostic-result {
+            background: rgba(227, 24, 55, 0.03);
+            border-left: 4px solid var(--primary-accent);
+            border-radius: 0 8px 8px 0;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+            animation: fadeIn 0.5s ease forwards;
+        }
+        
+        .diagnostic-result h4 {
+            color: var(--text-light);
+            margin: 0 0 10px 0;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .diagnostic-result p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            line-height: 1.5;
+            margin: 0 0 1.5rem 0;
+        }
+        
+        .diagnostic-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        /* Search and Filter Chips Styles */
+        .kh-search-section {
+            max-width: 1000px;
+            margin: 0 auto 3rem auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        
+        .search-bar-wrapper {
+            position: relative;
+            width: 100%;
+        }
+        
+        .search-bar-wrapper i {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 1.2rem;
+            pointer-events: none;
+            transition: color 0.3s ease;
+        }
+        
+        .search-input {
+            width: 100%;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 30px;
+            padding: 15px 25px 15px 55px;
+            color: var(--text-light);
+            font-size: 1.1rem;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow);
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary-accent);
+            box-shadow: 0 0 20px rgba(227, 24, 55, 0.15);
+        }
+        
+        .search-input:focus + i {
+            color: var(--primary-accent);
+        }
+        
+        .filter-chips-container {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding: 5px 0 15px 0;
+            scrollbar-width: thin;
+            scrollbar-color: var(--border-color) transparent;
+        }
+        
+        .filter-chips-container::-webkit-scrollbar {
+            height: 6px;
+        }
+        
+        .filter-chips-container::-webkit-scrollbar-thumb {
+            background-color: var(--border-color);
+            border-radius: 10px;
+        }
+        
+        .filter-chip {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .filter-chip:hover {
+            border-color: var(--primary-accent);
+            color: var(--text-light);
+            background: rgba(227, 24, 55, 0.02);
+        }
+        
+        .filter-chip.active {
+            background: var(--primary-accent);
+            border-color: var(--primary-accent);
+            color: white;
+            box-shadow: var(--glow);
+        }
+        
+        /* Tabbed Details Layout Styles */
+        .kh-tabs-header {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 1.5rem;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        
+        .kh-tab-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 600;
+            position: relative;
+            white-space: nowrap;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .kh-tab-btn:hover {
+            color: var(--text-light);
+        }
+        
+        .kh-tab-btn.active {
+            color: var(--primary-accent);
+        }
+        
+        .kh-tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: var(--primary-accent);
+            box-shadow: var(--glow);
+        }
+        
+        .kh-tab-content {
+            display: none;
+            animation: fadeIn 0.4s ease forwards;
+        }
+        
+        .kh-tab-content.active {
+            display: block;
+        }
+        
+        /* Badge Styles */
+        .kh-badge-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 1.5rem;
+        }
+        
+        .kh-badge {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            padding: 5px 12px;
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border: 1px solid transparent;
+        }
+        
+        .urgency-critical {
+            background: rgba(227, 24, 55, 0.1);
+            color: #ff4d6d;
+            border-color: rgba(227, 24, 55, 0.3);
+            box-shadow: 0 0 10px rgba(227, 24, 55, 0.15);
+        }
+        
+        .urgency-important {
+            background: rgba(255, 179, 0, 0.1);
+            color: #ffb300;
+            border-color: rgba(255, 179, 0, 0.3);
+        }
+        
+        .urgency-routine {
+            background: rgba(76, 175, 80, 0.1);
+            color: #4caf50;
+            border-color: rgba(76, 175, 80, 0.3);
+        }
+        
+        .difficulty-badge {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-light);
+            border-color: var(--border-color);
+        }
+        
+        /* Warning Signs List */
+        .warning-signs-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .warning-signs-list li {
+            position: relative;
+            padding-left: 30px;
+            color: var(--text-muted);
+            line-height: 1.6;
+            font-size: 1rem;
+        }
+        
+        .warning-signs-list li::before {
+            content: '\f071';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            left: 5px;
+            color: #ffb300;
+            font-size: 0.9rem;
+        }
+        
+        .kh-item-wrapper[id^="kh-section-cat1"] .warning-signs-list li::before,
+        .kh-badge-row:has(.urgency-critical) + * .warning-signs-list li::before {
+            color: var(--primary-accent);
+        }
+        
+        /* DIY Tip Card */
+        .diy-tip-card {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+            position: relative;
+        }
+        
+        .diy-tip-card h4 {
+            margin: 0 0 10px 0;
+            color: var(--text-light);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .diy-tip-card h4 i {
+            color: #ffb300;
+        }
+        
+        /* Did you know card */
+        .did-you-know-card {
+            background: rgba(33, 150, 243, 0.03);
+            border: 1px solid rgba(33, 150, 243, 0.2);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+        }
+        
+        .did-you-know-card h4 {
+            margin: 0 0 8px 0;
+            color: #2196f3;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1.05rem;
+        }
+        
+        /* Cost block */
+        .cost-estimate-block {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(255, 255, 255, 0.02);
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 1.5rem;
+        }
+        
+        .cost-estimate-block span {
+            font-weight: 700;
+            color: var(--text-light);
+        }
+        
+        .cost-val {
+            color: #4caf50 !important;
+            font-size: 1.2rem;
+            text-shadow: 0 0 10px rgba(76, 175, 80, 0.2);
+        }
+        
+        /* Admin controls */
+        .kb-admin-controls {
+            position: absolute;
+            right: 0;
+            top: 0;
+            z-index: 10;
+        }
+        
+        .btn-edit-kb {
+            background: rgba(40, 167, 69, 0.1);
+            border: 1px solid #28a745;
+            color: #28a745;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-edit-kb:hover {
+            background: #28a745;
+            color: white;
+            box-shadow: 0 0 10px rgba(40, 167, 69, 0.4);
+            transform: scale(1.1);
+        }
+        
+        /* Perodua Service Schedule Timeline */
+        .timeline-section {
+            max-width: 1000px;
+            margin: 4rem auto 0 auto;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 2.5rem;
+            box-shadow: var(--shadow);
+        }
+        
+        .timeline-container {
+            position: relative;
+            padding: 2rem 0;
+        }
+        
+        .timeline-container::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(180deg, var(--border-color), var(--primary-accent), var(--border-color));
+            transform: translateX(-50%);
+        }
+        
+        .timeline-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 3rem;
+            position: relative;
+        }
+        
+        .timeline-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .timeline-content {
+            width: 45%;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            position: relative;
+            transition: border-color 0.3s ease;
+        }
+        
+        .timeline-item:hover .timeline-content {
+            border-color: var(--primary-accent);
+        }
+        
+        .timeline-item:nth-child(even) {
+            flex-direction: row-reverse;
+        }
+        
+        .timeline-dot {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--bg-dark);
+            border: 3px solid var(--primary-accent);
+            z-index: 2;
+            box-shadow: var(--glow);
+            transition: all 0.3s ease;
+        }
+        
+        .timeline-item:hover .timeline-dot {
+            background: var(--primary-accent);
+            transform: translate(-50%, -50%) scale(1.2);
+        }
+        
+        .timeline-mileage {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: var(--primary-accent);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .timeline-parts {
+            list-style: none;
+            padding: 0;
+            margin: 10px 0 0 0;
+        }
+        
+        .timeline-parts li {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .timeline-parts li i {
+            color: #4caf50;
+            font-size: 0.8rem;
+        }
+        
+        @media (max-width: 768px) {
+            .timeline-container::before {
+                left: 20px;
+            }
+            .timeline-item {
+                flex-direction: column !important;
+                align-items: flex-start;
+                padding-left: 45px;
+                margin-bottom: 2rem;
+            }
+            .timeline-content {
+                width: 100%;
+            }
+            .timeline-dot {
+                left: 20px;
+                top: 25px;
+            }
+        }
+        
+        /* Ask AI Button */
+        .btn-ask-ai {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(33, 150, 243, 0.1);
+            border: 1px solid #2196f3;
+            color: #2196f3;
+            padding: 6px 14px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+        
+        .btn-ask-ai:hover {
+            background: #2196f3;
+            color: white;
+            box-shadow: 0 0 10px rgba(33, 150, 243, 0.4);
+        }
+        
+        .chatbot-container {
+            z-index: 2000 !important; /* Ensure chatbot goes over visual timeline details */
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Navigation -->
+    <header class="navbar" id="main-navbar">
+        <a href="index.html" class="nav-brand" id="nav-brand-link">
+            <img src="images/perodua_logo.png" alt="Perodua Logo">
+        </a>
+        <nav class="nav-links" id="main-nav-links">
+            <a href="index.html">Home</a>
+            <a href="quotes.html">Quotes</a>
+            <a class="active" href="knowledge.html">Knowledge Hub</a>
+            <a href="locate.html">Locate</a>
+        </nav>
+        <div class="nav-auth" id="main-nav-auth">
+            <a href="signin.html">Sign In</a>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="kh-page">
+        <div class="kh-header">
+            <h1>Maintenance <span>Knowledge Hub</span></h1>
+            <p style="color: var(--text-muted);">Explore our interactive guide to keep your vehicle performing at its peak.</p>
+        </div>
+
+        <!-- 2-Column Progress & Diagnostic Dashboard -->
+        <div class="kh-dash-grid">
+            <!-- Column 1: Progress Tracker -->
+            <div class="premium-card">
+                <div class="card-header-icon">
+                    <i class="fas fa-graduation-cap"></i>
+                    <h3>Your Knowledge Score</h3>
+                </div>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">Explore different automotive maintenance systems below to level up your mechanical understanding.</p>
+                
+                <div class="progress-stats">
+                    <span style="font-weight: 700; color: var(--text-light); font-size: 0.9rem;">READ TOPICS</span>
+                    <span id="kh-progress-percent" style="font-weight: 800; color: var(--primary-accent); font-size: 1.1rem;">0%</span>
+                </div>
+                <div class="progress-bar-container">
+                    <div id="kh-progress-fill" class="progress-fill"></div>
+                </div>
+                
+                <div class="badge-display">
+                    <span class="badge-title">Current Title Badge</span>
+                    <span id="kh-badge-val" class="badge-value badge-glow-novice">Car Novice</span>
+                </div>
+            </div>
+
+            <!-- Column 2: Symptom Diagnostic Guide -->
+            <div class="premium-card" id="diagnostic-guide-card">
+                <div class="card-header-icon">
+                    <i class="fas fa-stethoscope"></i>
+                    <h3>What's Wrong With My Car?</h3>
+                </div>
+                
+                <div id="diagnostic-content-area">
+                    <div class="diagnostic-step" id="diag-step-start">
+                        <p style="color: var(--text-muted); font-size: 0.9rem;">Select a common symptom below to diagnose potential issues and get direct troubleshooting advice:</p>
+                        <div class="diagnostic-options">
+                            <button class="diagnostic-btn" onclick="startDiagnostic('squeak')"><span>🔊 Squealing / Screeching Noise</span> <i class="fas fa-chevron-right"></i></button>
+                            <button class="diagnostic-btn" onclick="startDiagnostic('nostart')"><span>🔑 Car Won't Start</span> <i class="fas fa-chevron-right"></i></button>
+                            <button class="diagnostic-btn" onclick="startDiagnostic('pull')"><span>🚗 Car Pulls to One Side</span> <i class="fas fa-chevron-right"></i></button>
+                            <button class="diagnostic-btn" onclick="startDiagnostic('acwarm')"><span>❄️ AC is Warm / Not Cold</span> <i class="fas fa-chevron-right"></i></button>
+                            <button class="diagnostic-btn" onclick="startDiagnostic('vibrate')"><span>📳 Vibrations When Braking</span> <i class="fas fa-chevron-right"></i></button>
+                            <button class="diagnostic-btn" onclick="startDiagnostic('overheat')"><span>🔥 Engine Overheating</span> <i class="fas fa-chevron-right"></i></button>
+                            <button class="diagnostic-btn" onclick="startDiagnostic('fuel')"><span>⛽ Poor Fuel Economy</span> <i class="fas fa-chevron-right"></i></button>
+                            <button class="diagnostic-btn" onclick="startDiagnostic('warning')"><span>⚠️ Dashboard Warning Light</span> <i class="fas fa-chevron-right"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Interactive Car Diagram -->
+        <div class="car-diagram-section">
+            <h2 class="section-title" style="margin-bottom: 1.5rem; text-align: center;"><i class="fas fa-car-side"></i> Interactive Component Map</h2>
+            <p style="text-align:center; color:var(--text-muted); font-size:0.95rem; margin-bottom:1.8rem;">Select a Perodua car type to explore its key components.</p>
+
+            <div class="car-type-tabs" id="car-type-tabs">
+                <button class="car-type-tab active" data-type="hatchback" onclick="switchCarDiagram('hatchback', this)">
+                    <span class="car-type-icon"><img src="images/icon_hatchback.png" alt="Hatchback"></span>
+                    <span class="car-type-label">Hatchback</span>
+                    <span class="car-model-name">Myvi</span>
+                </button>
+                <button class="car-type-tab" data-type="sedan" onclick="switchCarDiagram('sedan', this)">
+                    <span class="car-type-icon"><img src="images/icon_sedan.png" alt="Sedan"></span>
+                    <span class="car-type-label">Sedan</span>
+                    <span class="car-model-name">Bezza</span>
+                </button>
+                <button class="car-type-tab" data-type="mpv" onclick="switchCarDiagram('mpv', this)">
+                    <span class="car-type-icon"><img src="images/icon_mpv.png" alt="MPV"></span>
+                    <span class="car-type-label">MPV</span>
+                    <span class="car-model-name">Alza</span>
+                </button>
+                <button class="car-type-tab" data-type="suv" onclick="switchCarDiagram('suv', this)">
+                    <span class="car-type-icon"><img src="images/icon_suv.png" alt="SUV"></span>
+                    <span class="car-type-label">SUV</span>
+                    <span class="car-model-name">Ativa</span>
+                </button>
+            </div>
+
+            <!-- Hatchback - Myvi -->
+            <div class="car-diagram-container" id="diagram-hatchback">
+                <img src="images/myvi-diagram.png" alt="Perodua Myvi Diagram">
+                <div class="hotspot" style="top:48%;left:12%;" onclick="scrollToKhSection('cat5')"><i class="fas fa-plus"></i><div class="hotspot-label">5. Battery System</div></div>
+                <div class="hotspot" style="top:50%;left:24%;" onclick="scrollToKhSection('cat1')"><i class="fas fa-plus"></i><div class="hotspot-label">1. Engine System</div></div>
+                <div class="hotspot" style="top:58%;left:20%;" onclick="scrollToKhSection('cat2')"><i class="fas fa-plus"></i><div class="hotspot-label">2. Braking System</div></div>
+                <div class="hotspot" style="top:42%;left:42%;" onclick="scrollToKhSection('cat6')"><i class="fas fa-plus"></i><div class="hotspot-label">6. Air Conditioning</div></div>
+                <div class="hotspot" style="top:62%;left:82%;" onclick="scrollToKhSection('cat4')"><i class="fas fa-plus"></i><div class="hotspot-label">4. Suspension System</div></div>
+                <div class="hotspot" style="top:58%;left:80%;" onclick="scrollToKhSection('cat3')"><i class="fas fa-plus"></i><div class="hotspot-label">3. Wheels System</div></div>
+            </div>
+
+            <!-- Sedan - Bezza -->
+            <div class="car-diagram-container" id="diagram-sedan" style="display:none;">
+                <img src="images/bezza-diagram.png" alt="Perodua Bezza Diagram">
+                <div class="hotspot" style="top:46%;left:12%;" onclick="scrollToKhSection('cat5')"><i class="fas fa-plus"></i><div class="hotspot-label">5. Battery System</div></div>
+                <div class="hotspot" style="top:48%;left:24%;" onclick="scrollToKhSection('cat1')"><i class="fas fa-plus"></i><div class="hotspot-label">1. Engine System</div></div>
+                <div class="hotspot" style="top:59%;left:21%;" onclick="scrollToKhSection('cat2')"><i class="fas fa-plus"></i><div class="hotspot-label">2. Braking System</div></div>
+                <div class="hotspot" style="top:40%;left:45%;" onclick="scrollToKhSection('cat6')"><i class="fas fa-plus"></i><div class="hotspot-label">6. Air Conditioning</div></div>
+                <div class="hotspot" style="top:65%;left:80%;" onclick="scrollToKhSection('cat4')"><i class="fas fa-plus"></i><div class="hotspot-label">4. Suspension System</div></div>
+                <div class="hotspot" style="top:59%;left:77%;" onclick="scrollToKhSection('cat3')"><i class="fas fa-plus"></i><div class="hotspot-label">3. Wheels System</div></div>
+            </div>
+
+            <!-- MPV - Alza -->
+            <div class="car-diagram-container" id="diagram-mpv" style="display:none;">
+                <img src="images/alza-diagram.png" alt="Perodua Alza Diagram">
+                <div class="hotspot" style="top:46%;left:10%;" onclick="scrollToKhSection('cat5')"><i class="fas fa-plus"></i><div class="hotspot-label">5. Battery System</div></div>
+                <div class="hotspot" style="top:48%;left:22%;" onclick="scrollToKhSection('cat1')"><i class="fas fa-plus"></i><div class="hotspot-label">1. Engine System</div></div>
+                <div class="hotspot" style="top:59%;left:22%;" onclick="scrollToKhSection('cat2')"><i class="fas fa-plus"></i><div class="hotspot-label">2. Braking System</div></div>
+                <div class="hotspot" style="top:38%;left:50%;" onclick="scrollToKhSection('cat6')"><i class="fas fa-plus"></i><div class="hotspot-label">6. Air Conditioning</div></div>
+                <div class="hotspot" style="top:65%;left:80%;" onclick="scrollToKhSection('cat4')"><i class="fas fa-plus"></i><div class="hotspot-label">4. Suspension System</div></div>
+                <div class="hotspot" style="top:59%;left:80%;" onclick="scrollToKhSection('cat3')"><i class="fas fa-plus"></i><div class="hotspot-label">3. Wheels System</div></div>
+            </div>
+
+            <!-- SUV - Ativa -->
+            <div class="car-diagram-container" id="diagram-suv" style="display:none;">
+                <img src="images/ativa-diagram.png" alt="Perodua Ativa Diagram">
+                <div class="hotspot" style="top:44%;left:12%;" onclick="scrollToKhSection('cat5')"><i class="fas fa-plus"></i><div class="hotspot-label">5. Battery System</div></div>
+                <div class="hotspot" style="top:46%;left:24%;" onclick="scrollToKhSection('cat1')"><i class="fas fa-plus"></i><div class="hotspot-label">1. Engine System</div></div>
+                <div class="hotspot" style="top:59%;left:23%;" onclick="scrollToKhSection('cat2')"><i class="fas fa-plus"></i><div class="hotspot-label">2. Braking System</div></div>
+                <div class="hotspot" style="top:38%;left:48%;" onclick="scrollToKhSection('cat6')"><i class="fas fa-plus"></i><div class="hotspot-label">6. Air Conditioning</div></div>
+                <div class="hotspot" style="top:62%;left:82%;" onclick="scrollToKhSection('cat4')"><i class="fas fa-plus"></i><div class="hotspot-label">4. Suspension System</div></div>
+                <div class="hotspot" style="top:59%;left:82%;" onclick="scrollToKhSection('cat3')"><i class="fas fa-plus"></i><div class="hotspot-label">3. Wheels System</div></div>
+            </div>
+        </div>
+
+        <!-- Search and Filters Section -->
+        <div class="kh-search-section">
+            <div class="search-bar-wrapper">
+                <input type="text" id="kh-search-input" class="search-input" placeholder="Search maintenance topics... (e.g. oil, belt, tire, noise)">
+                <i class="fas fa-search"></i>
+            </div>
+            
+            <div class="filter-chips-container" id="filter-chips-container">
+                <button class="filter-chip active" data-cat="all"><i class="fas fa-th-large"></i> All Systems</button>
+                <button class="filter-chip" data-cat="cat1"><i class="fas fa-engine"></i> 🔧 Engine</button>
+                <button class="filter-chip" data-cat="cat2"><i class="fas fa-dot-circle"></i> 🛑 Brakes</button>
+                <button class="filter-chip" data-cat="cat3"><i class="fas fa-circle-notch"></i> 🛞 Wheels</button>
+                <button class="filter-chip" data-cat="cat4"><i class="fas fa-compress-alt"></i> 🛕 Suspension</button>
+                <button class="filter-chip" data-cat="cat5"><i class="fas fa-car-battery"></i> 🔋 Battery</button>
+                <button class="filter-chip" data-cat="cat6"><i class="fas fa-wind"></i> ❄️ Aircond</button>
+                <button class="filter-chip" data-cat="cat8"><i class="fas fa-bolt"></i> ⚡ Electrical</button>
+                <button class="filter-chip" data-cat="cat9"><i class="fas fa-smog"></i> 💨 Exhaust</button>
+                <button class="filter-chip" data-cat="cat10"><i class="fas fa-lightbulb"></i> 💡 Lighting</button>
+            </div>
+        </div>
+        
+        <div class="kh-list" id="kh-list-container">
+            <!-- Content generated dynamically by JS based on serviceCategoryTable -->
+        </div>
+
+        <!-- Perodua Routine Service Schedule Reference -->
+        <div class="timeline-section">
+            <h2 class="section-title" style="text-align: center; margin-bottom: 1.5rem;"><i class="fas fa-history"></i> Routine Perodua Service Schedule</h2>
+            <p style="text-align: center; color: var(--text-muted); max-width: 600px; margin: 0 auto 3rem auto; font-size: 0.95rem;">
+                Understand what components are serviced and replaced during Perodua's official standard checkups at key mileage milestones.
+            </p>
+            
+            <div class="timeline-container">
+                <!-- 10k km -->
+                <div class="timeline-item">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-mileage"><i class="fas fa-road"></i> 10,000 KM (Minor Service)</div>
+                        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 10px;">Primary maintenance check designed to protect engine friction surfaces and inspect safety systems.</p>
+                        <ul class="timeline-parts">
+                            <li><i class="fas fa-check-circle"></i> Engine Oil Replacement (Fully Synthetic)</li>
+                            <li><i class="fas fa-check-circle"></i> Engine Oil Filter Replacement</li>
+                            <li><i class="fas fa-check-circle"></i> Drain Plug Gasket Replacement</li>
+                            <li><i class="fas fa-check-circle"></i> Brake Pad & Fluid inspection</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- 20k km -->
+                <div class="timeline-item">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-mileage"><i class="fas fa-road"></i> 20,000 KM (Medium Service)</div>
+                        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 10px;">Adds cabin air filtration to ensure fresh air quality and full inspection of undercarriage components.</p>
+                        <ul class="timeline-parts">
+                            <li><i class="fas fa-check-circle"></i> Engine Oil, Filter & Gasket</li>
+                            <li><i class="fas fa-check-circle"></i> Cabin Air Filter replacement</li>
+                            <li><i class="fas fa-check-circle"></i> Tire Rotation & Wheel Balancing</li>
+                            <li><i class="fas fa-check-circle"></i> Steering and Suspension joint check</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- 40k km -->
+                <div class="timeline-item">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-mileage"><i class="fas fa-road"></i> 40,000 KM (Major Service)</div>
+                        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 10px;">Critical milestone replacing heavy-duty fluids, spark plugs, and air cleaner to keep engine running efficiently.</p>
+                        <ul class="timeline-parts">
+                            <li><i class="fas fa-check-circle"></i> Engine Oil, Filter & Cabin Filter</li>
+                            <li><i class="fas fa-check-circle"></i> Spark Plugs replacement (Nickel models)</li>
+                            <li><i class="fas fa-check-circle"></i> Engine Air Cleaner Filter replacement</li>
+                            <li><i class="fas fa-check-circle"></i> Transmission Fluid replacement (CVT/AT)</li>
+                            <li><i class="fas fa-check-circle"></i> Complete Brake Fluid flushing & replacement</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- 80k km -->
+                <div class="timeline-item">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-mileage"><i class="fas fa-road"></i> 80,000 KM (Super Major Service)</div>
+                        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 10px;">Comprehensive replacement of all components including engine coolant, timing belts (if applicable), and drive belts.</p>
+                        <ul class="timeline-parts">
+                            <li><i class="fas fa-check-circle"></i> All 40,000 KM Major Service items</li>
+                            <li><i class="fas fa-check-circle"></i> Complete Engine Coolant flushing & replacement</li>
+                            <li><i class="fas fa-check-circle"></i> Drive Belt (Serpentine Belt) replacement</li>
+                            <li><i class="fas fa-check-circle"></i> Fuel Filter inspection</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Knowledge Modal (Upgraded) -->
+    <div id="edit-knowledge-modal" class="modal"
+        style="display:none; position:fixed; z-index:9999; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.6); align-items:center; justify-content:center; backdrop-filter: blur(4px);">
+        <div class="modal-content"
+            style="background:#1e1e1e; color: #fff; padding:2rem; border-radius:12px; width:90%; max-width:600px; max-height: 85vh; overflow-y: auto; border: 1px solid var(--primary-accent); box-shadow: 0 0 25px rgba(227, 24, 55, 0.25);">
+            <h3 style="color:var(--primary-accent); margin-top:0; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;"><i class="fas fa-edit"></i> Edit Knowledge Block</h3>
+            
+            <div class="form-group" style="margin-bottom:1rem; text-align:left;">
+                <label style="display:block; font-weight:bold; margin-bottom:0.5rem; color: #aaa;">Block Title</label>
+                <input type="text" id="edit-kb-title"
+                    style="width:100%; padding:10px; background:#111; border:1px solid var(--border-color); color: #fff; border-radius:6px; box-sizing: border-box;">
+            </div>
+            
+            <div class="form-group" style="margin-bottom:1rem; text-align:left;">
+                <label style="display:block; font-weight:bold; margin-bottom:0.5rem; color: #aaa;">Short Description</label>
+                <textarea id="edit-kb-desc" rows="3"
+                    style="width:100%; padding:10px; background:#111; border:1px solid var(--border-color); color: #fff; border-radius:6px; box-sizing: border-box; font-family: inherit;"></textarea>
+            </div>
+
+            <div class="form-group" style="margin-bottom:1rem; text-align:left;">
+                <label style="display:block; font-weight:bold; margin-bottom:0.5rem; color: #aaa;">Why It Matters</label>
+                <textarea id="edit-kb-why" rows="3"
+                    style="width:100%; padding:10px; background:#111; border:1px solid var(--border-color); color: #fff; border-radius:6px; box-sizing: border-box; font-family: inherit;"></textarea>
+            </div>
+
+            <div class="form-group" style="margin-bottom:1rem; text-align:left;">
+                <label style="display:block; font-weight:bold; margin-bottom:0.5rem; color: #aaa;">Warning Signs (one per line)</label>
+                <textarea id="edit-kb-warning" rows="4" placeholder="Enter one warning sign per line"
+                    style="width:100%; padding:10px; background:#111; border:1px solid var(--border-color); color: #fff; border-radius:6px; box-sizing: border-box; font-family: inherit;"></textarea>
+            </div>
+
+            <div class="form-group" style="margin-bottom:1rem; text-align:left;">
+                <label style="display:block; font-weight:bold; margin-bottom:0.5rem; color: #aaa;">Maintenance & DIY Tip</label>
+                <textarea id="edit-kb-tip" rows="3"
+                    style="width:100%; padding:10px; background:#111; border:1px solid var(--border-color); color: #fff; border-radius:6px; box-sizing: border-box; font-family: inherit;"></textarea>
+            </div>
+
+            <div class="form-group" style="margin-bottom:1rem; text-align:left;">
+                <label style="display:block; font-weight:bold; margin-bottom:0.5rem; color: #aaa;">Did You Know?</label>
+                <textarea id="edit-kb-know" rows="3"
+                    style="width:100%; padding:10px; background:#111; border:1px solid var(--border-color); color: #fff; border-radius:6px; box-sizing: border-box; font-family: inherit;"></textarea>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 1rem;">
+                <div class="form-group" style="text-align:left;">
+                    <label style="display:block; font-weight:bold; margin-bottom:0.5rem; color: #aaa;">Difficulty Level</label>
+                    <select id="edit-kb-diff" style="width:100%; padding:10px; background:#111; border:1px solid var(--border-color); color: #fff; border-radius:6px; box-sizing: border-box; height: 42px;">
+                        <option value="Easy">Easy</option>
+                        <option value="Moderate">Moderate</option>
+                        <option value="Advanced">Advanced</option>
+                        <option value="Professional Only">Professional Only</option>
+                    </select>
+                </div>
+                <div class="form-group" style="text-align:left;">
+                    <label style="display:block; font-weight:bold; margin-bottom:0.5rem; color: #aaa;">Urgency Level</label>
+                    <select id="edit-kb-urgency" style="width:100%; padding:10px; background:#111; border:1px solid var(--border-color); color: #fff; border-radius:6px; box-sizing: border-box; height: 42px;">
+                        <option value="Critical">🔴 Critical</option>
+                        <option value="Important">🟡 Important</option>
+                        <option value="Routine">🟢 Routine</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom:1.5rem; text-align:left;">
+                <label style="display:block; font-weight:bold; margin-bottom:0.5rem; color: #aaa;">Cost Estimate (e.g. RM 80 - RM 150)</label>
+                <input type="text" id="edit-kb-cost"
+                    style="width:100%; padding:10px; background:#111; border:1px solid var(--border-color); color: #fff; border-radius:6px; box-sizing: border-box;">
+            </div>
+
+            <div style="display:flex; gap:10px; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
+                <button class="btn-primary" id="save-kb-btn" style="flex:1; padding: 12px; cursor: pointer; border-radius: 6px; font-weight: 700;">Save Changes</button>
+                <button class="btn-danger" id="cancel-kb-btn" style="flex:1; padding: 12px; cursor: pointer; border-radius: 6px; font-weight: 700; background: #333; border: 1px solid #444; color: #fff;">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Back to Top Button -->
+    <button id="back-to-top" class="back-to-top" aria-label="Back to top">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+
+    <div class="chatbot-toggle">
+        <i class="fas fa-comment-dots"></i>
+    </div>
+    <div class="chatbot-container">
+        <div class="chatbot-header">
+            <span>24/7 AI CHATBOT</span>
+            <i class="fas fa-times close-chat" style="cursor:pointer; opacity:0.7;"></i>
+        </div>
+        <div class="chatbot-body" id="chat-body">
+            <div class="msg bot-msg">Hello, how can I help you?</div>
+        </div>
+        <div class="chatbot-footer">
+            <input type="text" id="chat-input-text" placeholder="Type your message">
+            <button id="chat-send-btn"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
+
+
+
+    <script src="js/db-init.js"></script>
+    <script src="js/script.js"></script>
+    <script>
+        // ─── Car Type Diagram Switcher ───────────────────────────────────────
+        function switchCarDiagram(type, clickedTab) {
+            // Hide all diagram containers
+            const diagrams = ['diagram-hatchback', 'diagram-sedan', 'diagram-mpv', 'diagram-suv'];
+            diagrams.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = 'none';
+            });
+
+            // Show the selected diagram with fade animation
+            const target = document.getElementById('diagram-' + type);
+            if (target) {
+                target.style.display = 'block';
+                // Re-trigger animation by cloning
+                target.style.animation = 'none';
+                target.offsetHeight; // reflow
+                target.style.animation = 'fadeInDiagram 0.4s ease forwards';
+            }
+
+            // Update active tab styling
+            document.querySelectorAll('.car-type-tab').forEach(btn => btn.classList.remove('active'));
+            if (clickedTab) clickedTab.classList.add('active');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const backToTopBtn = document.getElementById('back-to-top');
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            
+            // Adjust position based on role
+            // Admin/Employee have no chatbot, so button stays at bottom: 37.5px
+            // Customers have the chatbot, so button goes to bottom: 110px (centered above chatbot)
+            if (currentUser && (currentUser.role === 'Admin' || currentUser.role === 'Employee')) {
+                backToTopBtn.style.bottom = '37.5px';
+            } else {
+                backToTopBtn.style.bottom = '110px';
+            }
+
+            // Scroll event listener to show/hide button
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 300) {
+                    backToTopBtn.classList.add('show');
+                } else {
+                    backToTopBtn.classList.remove('show');
+                }
+            });
+
+            // Click event to scroll to top
+            backToTopBtn.addEventListener('click', () => {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        });
+    </script>
+</body>
+
+</html>

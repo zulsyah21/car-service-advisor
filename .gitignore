@@ -1,0 +1,29 @@
+# --- Environment & Secrets ---------------------------------------------------
+# NEVER commit this — it contains your API keys and DB passwords
+.env
+.env.local
+.env.*.local
+
+# --- Node.js Dependencies ----------------------------------------------------
+# Cloud platforms run 'npm install' themselves, so this folder is not needed
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# --- Logs --------------------------------------------------------------------
+logs/
+*.log
+
+# --- OS Generated Files ------------------------------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Editor / IDE Configs ----------------------------------------------------
+.vscode/settings.json
+.idea/
+
+# --- Scratch / Temp Files ----------------------------------------------------
+scratch/
+*.tmp

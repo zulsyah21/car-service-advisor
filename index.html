@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Automated Car Service Advisor — Precision diagnostics, cost estimates, and maintenance knowledge for your Perodua vehicle.">
+    <title>Automated Car Service Advisor | Perodua Specialist</title>
+
+    <!-- Tailwind CSS v3 CDN -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=Montserrat:wght@800;900&display=swap" rel="stylesheet">
+
+    <style>
+        /* ─── CSS Variables & Base ─── */
+        :root {
+            --accent: #e31837;
+            --accent-hover: #b3122b;
+            --accent-glow: rgba(227, 24, 55, 0.4);
+            --bg-dark: #050505;
+            --bg-card: #0f0f0f;
+            --bg-glass: rgba(15, 15, 15, 0.75);
+            --border: #1e1e1e;
+            --text-light: #ffffff;
+            --text-muted: #888888;
+            --shadow: 0 10px 40px rgba(0, 0, 0, 0.9);
+            --glow: 0 0 20px rgba(227, 24, 55, 0.35);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* ─── Scrollbar ─── */
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: var(--bg-dark); }
+        ::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+        /* ─── Typography ─── */
+        .hero-title {
+            font-family: 'Montserrat', sans-serif;
+            letter-spacing: -0.05em;
+            line-height: 0.85;
+            text-transform: uppercase;
+        }
+        .text-outline {
+            -webkit-text-stroke: 1px rgba(255,255,255,0.18);
+            color: transparent;
+        }
+        .overlay-vignette {
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle, transparent 20%, rgba(0,0,0,0.85) 100%);
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        /* ─── NAVBAR SCROLLED ─── */
+        #main-navbar.scrolled {
+            background: rgba(5, 5, 5, 0.97);
+            border-bottom: 1px solid var(--border);
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+        }
+
+        /* ─── NAVIGATION LINKS STANDARDIZATION ─── */
+        #main-nav-links a,
+        #main-nav-auth a {
+            color: rgba(255, 255, 255, 0.55) !important;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 14px;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            transition: color 0.25s;
+            position: relative;
+        }
+
+        #main-nav-links a::after {
+            content: '';
+            position: absolute;
+            left: 0; bottom: -3px;
+            width: 0; height: 1px;
+            background: #e31837;
+            transition: width 0.3s ease;
+        }
+
+        #main-nav-links a:hover,
+        #main-nav-links a.active,
+        #main-nav-auth a:hover {
+            color: #fff !important;
+        }
+
+        #main-nav-links a:hover::after,
+        #main-nav-links a.active::after {
+            width: 100%;
+        }
+
+        /* Profile dropdown from script.js */
+        .profile-dropdown {
+            display: flex; align-items: center; gap: 8px;
+            color: var(--accent); cursor: pointer; font-size: 1.4rem;
+        }
+        .hover-username {
+            font-size: 0.85rem; font-weight: 600;
+            max-width: 0; overflow: hidden; opacity: 0;
+            white-space: nowrap; transition: all 0.3s ease;
+            color: var(--text-light);
+        }
+        .profile-dropdown:hover .hover-username { max-width: 150px; opacity: 1; }
+        .mgmt-dropdown { position: relative; display: inline-block; }
+        .mgmt-dropdown-btn {
+            color: var(--accent); text-decoration: none; font-weight: 700;
+            font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em;
+            display: flex; align-items: center; gap: 6px; cursor: pointer;
+        }
+        .mgmt-dropdown-btn:hover { color: #ff2244; }
+        .mgmt-dropdown-content {
+            display: none; position: absolute; top: 100%; right: 0; left: auto;
+            background: #141414; min-width: 190px; padding-top: 8px;
+            box-shadow: var(--shadow); z-index: 9999;
+            border: 1px solid var(--border); border-radius: 10px; overflow: hidden;
+        }
+        .mgmt-dropdown-content a {
+            color: var(--text-light); padding: 11px 16px; text-decoration: none;
+            display: block; font-size: 0.85rem; font-weight: 600;
+            border-bottom: 1px solid var(--border); letter-spacing: 0;
+            text-transform: none;
+        }
+        .mgmt-dropdown-content a:last-child { border-bottom: none; }
+        .mgmt-dropdown-content a:hover { background: rgba(227,24,55,0.08); color: var(--accent); }
+        .mgmt-dropdown:hover .mgmt-dropdown-content { display: block; }
+
+        /* ─── HERO SECTION ─── */
+        .hero-container {
+            position: relative;
+            height: 100vh;
+            width: 100%;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .hero-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 1;
+        }
+
+        /* Quote Cards */
+        .quote-card {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid var(--border);
+            padding: 1rem 1.2rem;
+            margin-bottom: 0.85rem;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            position: relative;
+            overflow: hidden;
+            text-decoration: none;
+        }
+        .quote-card::before {
+            content: '';
+            position: absolute; left: 0; top: 0; bottom: 0;
+            width: 3px; background: var(--accent);
+            transform: scaleY(0);
+            transform-origin: bottom;
+            transition: transform 0.25s;
+        }
+        .quote-card:hover { border-color: rgba(227,24,55,0.3); transform: translateX(4px); background: rgba(227,24,55,0.04); }
+        .quote-card:hover::before { transform: scaleY(1); }
+        .quote-info h3 { color: var(--text-light); font-size: 0.9rem; font-weight: 700; margin-bottom: 2px; }
+        .quote-info p { color: var(--text-muted); font-size: 0.78rem; }
+        .quote-price { color: var(--accent); font-size: 1.05rem; font-weight: 800; font-family: 'Montserrat', sans-serif; }
+
+        /* ─── CHATBOT (styled to match theme) ─── */
+        .chatbot-toggle {
+            position: fixed; bottom: 28px; right: 28px;
+            background: var(--accent);
+            color: white; width: 58px; height: 58px;
+            border-radius: 50%;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 22px; cursor: pointer;
+            box-shadow: 0 4px 24px rgba(227,24,55,0.5);
+            z-index: 2000; transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .chatbot-toggle:hover { transform: scale(1.08); box-shadow: 0 6px 32px rgba(227,24,55,0.7); }
+        .chatbot-container {
+            position: fixed; bottom: 100px; right: 28px;
+            width: 340px; height: 460px;
+            background: #121212;
+            border-radius: 10px;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.8);
+            display: none; flex-direction: column;
+            z-index: 2000; overflow: hidden;
+            border: 1px solid var(--border);
+        }
+        .chatbot-header {
+            background: var(--accent);
+            color: white; padding: 1rem 1.2rem;
+            font-weight: 700; font-size: 0.78rem;
+            letter-spacing: 0.15em; text-transform: uppercase;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .chatbot-body {
+            flex: 1; padding: 1rem;
+            overflow-y: auto; background: #0d0d0d;
+            display: flex; flex-direction: column; gap: 10px;
+        }
+        .chatbot-body::-webkit-scrollbar { width: 4px; }
+        .chatbot-body::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 4px; }
+        .msg { padding: 0.75rem 1rem; border-radius: 12px; max-width: 85%; font-size: 0.85rem; line-height: 1.5; }
+        .bot-msg {
+            background: #1c1c1c; color: #ddd;
+            border: 1px solid #2a2a2a;
+            border-radius: 12px 12px 12px 2px; align-self: flex-start;
+        }
+        .user-msg {
+            background: var(--accent); color: white;
+            border-radius: 12px 12px 2px 12px; align-self: flex-end;
+        }
+        .chatbot-footer {
+            padding: 0.75rem; background: #111;
+            border-top: 1px solid var(--border);
+            display: flex; gap: 8px;
+        }
+        .chatbot-footer input {
+            flex: 1; padding: 0.6rem 0.9rem;
+            background: #1a1a1a; border: 1px solid var(--border);
+            border-radius: 20px; color: var(--text-light);
+            font-size: 0.83rem; outline: none;
+            font-family: 'Inter', sans-serif;
+            transition: border-color 0.25s;
+        }
+        .chatbot-footer input:focus { border-color: var(--accent); }
+        .chatbot-footer input::placeholder { color: #555; }
+        .chatbot-footer button {
+            background: var(--accent); border: none; color: white;
+            width: 38px; height: 38px; border-radius: 50%;
+            cursor: pointer; font-size: 0.85rem;
+            display: flex; align-items: center; justify-content: center;
+            transition: background 0.25s;
+        }
+        .chatbot-footer button:hover { background: var(--accent-hover); }
+
+        /* Chatbot Header Actions */
+        .chatbot-header-actions {
+            display: flex; align-items: center; gap: 12px;
+        }
+        .chatbot-header-actions i {
+            cursor: pointer; opacity: 0.8;
+            transition: opacity 0.25s, transform 0.25s; font-size: 0.85rem;
+        }
+        .chatbot-header-actions i:hover { opacity: 1; transform: scale(1.15); }
+
+
+
+
+        /* Chatbot Feedback Overlay */
+        .chatbot-feedback-overlay {
+            position: absolute; inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(6px);
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            z-index: 10; padding: 1.5rem;
+            animation: chatFeedbackFadeIn 0.3s ease;
+        }
+        @keyframes chatFeedbackFadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .chatbot-feedback-overlay h4 {
+            color: #fff; font-size: 0.95rem; margin-bottom: 0.5rem;
+            text-align: center; letter-spacing: 0.05em;
+        }
+        .chatbot-feedback-overlay p {
+            color: #999; font-size: 0.75rem; margin-bottom: 1.2rem; text-align: center;
+        }
+        .chatbot-star-rating { display: flex; gap: 6px; margin-bottom: 1rem; }
+        .chatbot-star-rating i {
+            font-size: 1.6rem; color: #444; cursor: pointer;
+            transition: color 0.2s, transform 0.2s;
+        }
+        .chatbot-star-rating i:hover,
+        .chatbot-star-rating i.active { color: #ffc107; transform: scale(1.2); }
+        .chatbot-star-rating i.hovered { color: #ffd54f; }
+        .chatbot-feedback-textarea {
+            width: 100%; min-height: 60px; max-height: 90px;
+            background: #1a1a1a; border: 1px solid #333; border-radius: 8px;
+            color: #eee; font-family: 'Inter', sans-serif; font-size: 0.8rem;
+            padding: 0.6rem 0.8rem; resize: none; outline: none; margin-bottom: 1rem;
+            transition: border-color 0.25s;
+        }
+        .chatbot-feedback-textarea:focus { border-color: var(--accent); }
+        .chatbot-feedback-textarea::placeholder { color: #666; }
+        .chatbot-feedback-btns { display: flex; gap: 8px; width: 100%; }
+        .chatbot-feedback-btns button {
+            flex: 1; padding: 0.55rem 0.8rem; border: none; border-radius: 6px;
+            font-size: 0.78rem; font-weight: 700; cursor: pointer;
+            transition: all 0.25s; font-family: 'Inter', sans-serif; letter-spacing: 0.03em;
+        }
+        .chatbot-feedback-btns .fb-submit { background: var(--accent); color: #fff; }
+        .chatbot-feedback-btns .fb-submit:hover { background: var(--accent-hover); }
+        .chatbot-feedback-btns .fb-skip { background: #2a2a2a; color: #aaa; }
+        .chatbot-feedback-btns .fb-skip:hover { background: #333; color: #fff; }
+        .chatbot-thankyou { text-align: center; animation: chatFeedbackFadeIn 0.3s ease; }
+        .chatbot-thankyou i { font-size: 2.2rem; color: #4caf50; margin-bottom: 0.8rem; display: block; }
+        .chatbot-thankyou h4 { color: #fff; font-size: 0.95rem; margin-bottom: 0.4rem; }
+        .chatbot-thankyou p { color: #888; font-size: 0.75rem; }
+
+        /* Profile modal (injected by script.js) */
+        #profile-modal {
+            display: none; position: fixed;
+            top: 76px; right: 1.5rem;
+            background: #111; padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.9);
+            z-index: 3000;
+            border: 1px solid var(--border);
+            width: 260px;
+            color: var(--text-light);
+        }
+        #profile-modal h3 {
+            margin-bottom: 5px; color: var(--accent);
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 10px; font-size: 1rem;
+        }
+        #profile-modal p { margin-bottom: 8px; font-size: 0.88rem; color: var(--text-muted); }
+        #profile-modal hr { margin: 12px 0; border: 0; border-top: 1px solid var(--border); }
+        .btn-primary {
+            background: var(--accent); color: white;
+            padding: 0.65rem 1.2rem; border: none;
+            border-radius: 5px; cursor: pointer; font-weight: 700;
+            font-size: 0.85rem; transition: all 0.25s; width: 100%; margin-bottom: 6px;
+        }
+        .btn-primary:hover { background: var(--accent-hover); }
+        .btn-edit {
+            background: #1a5c1c; color: white;
+            padding: 0.65rem 1.2rem; border: none;
+            border-radius: 5px; cursor: pointer; font-weight: 700;
+            font-size: 0.85rem; transition: all 0.25s; width: 100%; margin-bottom: 6px;
+        }
+        .btn-edit:hover { background: #238526; }
+        .btn-danger {
+            background: var(--accent); color: white;
+            padding: 0.65rem 1.2rem; border: none;
+            border-radius: 5px; cursor: pointer; font-weight: 700;
+            font-size: 0.85rem; transition: all 0.25s; width: 100%;
+        }
+        .btn-danger:hover { background: var(--accent-hover); }
+        .btn-secondary {
+            background: #1e1e1e; color: var(--text-light);
+            padding: 0.65rem 1.2rem; border: none;
+            border-radius: 5px; cursor: pointer; font-weight: 700;
+            font-size: 0.85rem; transition: all 0.25s;
+        }
+        .btn-secondary:hover { background: #2a2a2a; }
+    </style>
+</head>
+
+<body class="bg-black text-white antialiased">
+
+<!-- ══════════════════════════════
+     NAVIGATION
+     DO NOT REMOVE: IDs and structure are manipulated by script.js
+     Matches premium reference design layout
+ ═══════════════════════════════ -->
+<header class="fixed top-0 left-0 w-full z-50 px-8 py-6 flex items-center justify-between bg-gradient-to-b from-black/80 to-transparent transition-all duration-300" id="main-navbar">
+    <!-- Logo Section -->
+    <a href="index.html" class="flex items-center space-x-2" id="nav-brand-link" data-purpose="branding">
+        <img alt="Perodua Logo" class="w-auto h-12 hover:scale-105 transition-transform duration-300" src="images/perodua_logo.png">
+    </a>
+
+    <!-- Navigation Links -->
+    <nav class="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center space-x-10" id="main-nav-links">
+        <a class="active" href="index.html">Home</a>
+        <a href="quotes.html">Quotes</a>
+        <a href="knowledge.html">Knowledge Hub</a>
+        <a href="locate.html">Locate</a>
+    </nav>
+
+    <!-- Right Side Actions / Auth area -->
+    <div class="flex items-center space-x-6 nav-auth" id="main-nav-auth">
+        <a href="signin.html">Sign In</a>
+    </div>
+</header>
+
+
+<!-- ══════════════════════════════
+     HERO SECTION
+     Full cover premium Red Myvi background with stroked overlays
+ ═══════════════════════════════ -->
+<main class="hero-container relative h-screen w-full overflow-hidden flex flex-col justify-center items-center" id="hero">
+    <!-- Background Car Image -->
+    <img alt="Red Perodua Myvi Rear View" class="hero-bg absolute top-0 left-0 w-full h-full object-cover z-1" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDEK1lFf3Y4lcCHSPGzXtf-KaUVzamyvzjd6Re-WYbS21bWAJPRwffaR6o77UeHihqeY269YY9Z-eAECkxo96vkuGzW7WHC70tgguM-7lHjV1mq-_4GoZc8ypTZ9JbY1aQ23_fO5anrIx8Nwe01H0s7CY-m6xOOoB3HuckCexMm4e-XWvygCo8JWISvPEFe4yo_gNHYw6nRu-ezv5EaaDc7Q4jAyfDwwhgqoudJRcuwizXh_yhAL2ocTm3k08TefWqyQ5ta5aLqCw=s0">
+    
+    <!-- Dark Vignette Overlay -->
+    <div class="overlay-vignette"></div>
+    <!-- Bottom fade to section below -->
+    <div class="absolute bottom-0 left-0 right-0 h-56 bg-gradient-to-t from-black to-transparent z-3 pointer-events-none"></div>
+
+    <!-- Content Overlay -->
+    <div class="hero-content relative z-10 text-center w-full px-4">
+        <div class="max-w-7xl mx-auto relative flex flex-col items-center">
+            <!-- Background Text Outline -->
+            <h1 class="hero-title text-6xl md:text-[145px] text-outline absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[68%] w-full opacity-35 select-none pointer-events-none">
+                AUTOMATED
+            </h1>
+            <!-- Main Hero Title -->
+            <h1 class="hero-title text-5xl md:text-[110px] relative z-20 mt-16 font-extrabold text-white">
+                <span class="text-red-600">SERVICE</span> ADVISOR
+            </h1>
+            
+            <div class="mt-8 flex flex-col items-center w-full max-w-[500px]">
+                <p class="text-[10px] md:text-xs tracking-[0.3em] uppercase mb-6 text-gray-300 font-bold">Precision diagnostics for your Perodua</p>
+                
+                <!-- Search bar -->
+                <div class="flex items-stretch w-full bg-black/40 border border-white/10 backdrop-blur-md rounded-md overflow-hidden transition-all duration-300 focus-within:border-red-600/50 focus-within:shadow-[0_0_15px_rgba(220,38,38,0.2)] mb-6 z-20" id="hero-search-bar">
+                    <input type="text" id="hero-search-input" class="flex-1 bg-transparent border-none outline-none text-white text-sm py-4 px-5 placeholder-gray-500 font-medium" placeholder="Search car model or component (e.g. Myvi, Brake)…" autocomplete="off">
+                    <button id="hero-search-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold px-6 transition-colors flex items-center justify-center">
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+
+                <!-- Primary CTA -->
+                <a href="quotes.html" id="hero-cta-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-12 tracking-widest uppercase text-xs transition-all transform hover:scale-105 shadow-[0_0_20px_rgba(220,38,38,0.5)] z-20">
+                    Get Your Quotes Now
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Left Decorative Elements -->
+    <div class="absolute bottom-10 left-10 z-20 hidden md:block">
+        <p class="text-[10px] tracking-[0.4em] uppercase text-gray-500 mb-2">Perodua Specialist</p>
+        <div class="w-20 h-[1.5px] bg-red-600"></div>
+    </div>
+
+    <!-- Scroll Indicator -->
+    <div class="absolute bottom-10 right-10 z-20 flex flex-col items-center">
+        <div class="w-[1px] h-12 bg-gray-800 relative">
+            <div class="absolute top-0 left-0 w-full h-1/2 bg-red-600 animate-bounce"></div>
+        </div>
+    </div>
+</main>
+
+
+<!-- ══════════════════════════════
+     ADVISOR COCKPIT (Dashboard)
+     Personalized metrics and launchpad
+ ═══════════════════════════════ -->
+<section class="bg-black py-20 px-8 border-t border-neutral-900" id="dashboard-section">
+    <div class="max-w-7xl mx-auto">
+        <div class="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
+            <div>
+                <h2 class="hero-title text-4xl md:text-5xl mb-3">YOUR <span class="text-red-600">COCKPIT</span></h2>
+                <div class="h-1 w-20 bg-red-600"></div>
+            </div>
+            <p class="text-gray-500 text-xs tracking-[0.2em] uppercase max-w-xs md:text-right">
+                Personalized quotes & quick access to every service module.
+            </p>
+        </div>
+
+        <!-- DO NOT RENAME: dashboard-grid, recent-quotes-panel, recent-quotes-list, services-panel -->
+        <div class="dashboard-grid flex flex-col lg:flex-row gap-8" id="dashboard-grid">
+
+            <!-- LEFT: Recent Quotes (Customer only, dynamic) -->
+            <div class="dashboard-left flex-1 bg-neutral-950 border border-neutral-900 border-t-2 border-t-red-600 p-8 rounded-lg min-h-[320px]" id="recent-quotes-panel" style="display:none;">
+                <div class="text-gray-500 text-xs tracking-[0.2em] uppercase mb-6 flex items-center gap-2 font-bold">
+                    <i class="fas fa-history text-red-600"></i> Recent Quotes
+                </div>
+                <div id="recent-quotes-list" class="flex flex-col gap-4"></div>
+            </div>
+
+            <!-- RIGHT: Services Quick Launch -->
+            <div class="dashboard-right flex-1 bg-neutral-950 border border-neutral-900 border-t-2 border-t-neutral-800 p-8 rounded-lg" id="services-panel">
+                <div class="text-gray-500 text-xs tracking-[0.2em] uppercase mb-6 flex items-center gap-2 font-bold">
+                    <i class="fas fa-tools text-red-600"></i> Quick Services
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    <a href="knowledge.html?category=engine" class="group bg-neutral-900/40 hover:bg-red-600/10 border border-neutral-900 hover:border-red-600/30 p-6 rounded-lg flex flex-col items-center gap-3 transition-all duration-300 text-center" id="svc-engine">
+                        <i class="fas fa-oil-can text-2xl text-gray-600 group-hover:text-red-600 group-hover:drop-shadow-[0_0_6px_rgba(220,38,38,0.5)] transition-all"></i>
+                        <span class="text-[10px] tracking-[0.15em] font-bold uppercase text-gray-400 group-hover:text-white transition-colors">Engine</span>
+                    </a>
+                    <a href="knowledge.html?category=brake" class="group bg-neutral-900/40 hover:bg-red-600/10 border border-neutral-900 hover:border-red-600/30 p-6 rounded-lg flex flex-col items-center gap-3 transition-all duration-300 text-center" id="svc-brake">
+                        <i class="fas fa-compact-disc text-2xl text-gray-600 group-hover:text-red-600 group-hover:drop-shadow-[0_0_6px_rgba(220,38,38,0.5)] transition-all"></i>
+                        <span class="text-[10px] tracking-[0.15em] font-bold uppercase text-gray-400 group-hover:text-white transition-colors">Brake</span>
+                    </a>
+                    <a href="knowledge.html?category=wheels" class="group bg-neutral-900/40 hover:bg-red-600/10 border border-neutral-900 hover:border-red-600/30 p-6 rounded-lg flex flex-col items-center gap-3 transition-all duration-300 text-center" id="svc-wheels">
+                        <i class="fas fa-dharmachakra text-2xl text-gray-600 group-hover:text-red-600 group-hover:drop-shadow-[0_0_6px_rgba(220,38,38,0.5)] transition-all"></i>
+                        <span class="text-[10px] tracking-[0.15em] font-bold uppercase text-gray-400 group-hover:text-white transition-colors">Wheels</span>
+                    </a>
+                    <a href="knowledge.html?category=battery" class="group bg-neutral-900/40 hover:bg-red-600/10 border border-neutral-900 hover:border-red-600/30 p-6 rounded-lg flex flex-col items-center gap-3 transition-all duration-300 text-center" id="svc-battery">
+                        <i class="fas fa-car-battery text-2xl text-gray-600 group-hover:text-red-600 group-hover:drop-shadow-[0_0_6px_rgba(220,38,38,0.5)] transition-all"></i>
+                        <span class="text-[10px] tracking-[0.15em] font-bold uppercase text-gray-400 group-hover:text-white transition-colors">Battery</span>
+                    </a>
+                    <a href="knowledge.html?category=suspension" class="group bg-neutral-900/40 hover:bg-red-600/10 border border-neutral-900 hover:border-red-600/30 p-6 rounded-lg flex flex-col items-center gap-3 transition-all duration-300 text-center" id="svc-suspension">
+                        <i class="fas fa-cogs text-2xl text-gray-600 group-hover:text-red-600 group-hover:drop-shadow-[0_0_6px_rgba(220,38,38,0.5)] transition-all"></i>
+                        <span class="text-[10px] tracking-[0.15em] font-bold uppercase text-gray-400 group-hover:text-white transition-colors">Suspension</span>
+                    </a>
+                    <a href="knowledge.html?category=ac" class="group bg-neutral-900/40 hover:bg-red-600/10 border border-neutral-900 hover:border-red-600/30 p-6 rounded-lg flex flex-col items-center gap-3 transition-all duration-300 text-center" id="svc-ac">
+                        <i class="fas fa-snowflake text-2xl text-gray-600 group-hover:text-red-600 group-hover:drop-shadow-[0_0_6px_rgba(220,38,38,0.5)] transition-all"></i>
+                        <span class="text-[10px] tracking-[0.15em] font-bold uppercase text-gray-400 group-hover:text-white transition-colors">Air Cond</span>
+                    </a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+
+<!-- ══════════════════════════════
+     STATS STRIP
+     Harmonic premium metrics layout
+ ═══════════════════════════════ -->
+<section class="bg-neutral-950/60 border-t border-b border-neutral-900 py-16 px-8">
+    <div class="max-w-5xl mx-auto flex flex-wrap justify-around items-center gap-8 text-center">
+        <div class="min-w-[120px]">
+            <div class="hero-title text-4xl md:text-5xl font-extrabold text-red-600 mb-2">8+</div>
+            <div class="text-[10px] tracking-[0.2em] uppercase text-gray-500 font-bold">Perodua Models</div>
+        </div>
+        <div class="min-w-[120px]">
+            <div class="hero-title text-4xl md:text-5xl font-extrabold text-red-600 mb-2">10</div>
+            <div class="text-[10px] tracking-[0.2em] uppercase text-gray-500 font-bold">Service Systems</div>
+        </div>
+        <div class="min-w-[120px]">
+            <div class="hero-title text-4xl md:text-5xl font-extrabold text-red-600 mb-2">42+</div>
+            <div class="text-[10px] tracking-[0.2em] uppercase text-gray-500 font-bold">Knowledge Topics</div>
+        </div>
+        <div class="min-w-[120px]">
+            <div class="hero-title text-4xl md:text-5xl font-extrabold text-red-600 mb-2">AI</div>
+            <div class="text-[10px] tracking-[0.2em] uppercase text-gray-500 font-bold">Powered Chatbot</div>
+        </div>
+    </div>
+</section>
+
+
+<!-- ══════════════════════════════
+     ALL SYSTEMS SECTION
+     6-card responsive grid styled with premium hover opacity transformations
+ ═══════════════════════════════ -->
+<section class="bg-black py-24 px-8 border-t border-neutral-900" id="systems">
+    <div class="max-w-7xl mx-auto">
+        <div class="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-4">
+            <div>
+                <h2 class="hero-title text-4xl md:text-6xl mb-4">ALL <span class="text-red-600">SYSTEMS</span></h2>
+                <div class="h-1 w-24 bg-red-600"></div>
+            </div>
+            <p class="text-gray-500 text-xs tracking-[0.2em] uppercase max-w-xs md:text-right">
+                Comprehensive automated analysis of every critical component in your vehicle.
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            
+            <!-- 01 Engine -->
+            <a href="knowledge.html?category=engine" class="group relative overflow-hidden bg-neutral-950 aspect-[4/5] p-8 flex flex-col justify-between transition-all duration-300 hover:bg-red-600/10 border border-neutral-900 hover:border-red-600/30 rounded-md" id="card-engine" style="text-decoration:none;">
+                <span class="text-gray-600 text-sm font-bold group-hover:text-red-500 transition-colors">01</span>
+                <div class="relative z-10">
+                    <h3 class="hero-title text-2xl mb-3 text-white group-hover:text-red-600 transition-colors">ENGINE</h3>
+                    <p class="text-gray-400 text-xs leading-relaxed opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
+                        Oil, coolant, spark plugs, air filter, timing belt, and transmission fluids.
+                    </p>
+                    <span class="inline-flex items-center gap-2 text-[9px] tracking-widest uppercase font-bold text-red-600 mt-4 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
+                        Explore <i class="fas fa-arrow-right text-[8px]"></i>
+                    </span>
+                </div>
+                <img src="images/engine.jpg" alt="Engine" class="absolute inset-0 w-full h-full object-cover opacity-20 group-hover:opacity-35 transition-all duration-500 scale-100 group-hover:scale-105">
+            </a>
+
+            <!-- 02 Brake -->
+            <a href="knowledge.html?category=brake" class="group relative overflow-hidden bg-neutral-950 aspect-[4/5] p-8 flex flex-col justify-between transition-all duration-300 hover:bg-red-600/10 border border-neutral-900 hover:border-red-600/30 rounded-md" id="card-brake" style="text-decoration:none;">
+                <span class="text-gray-600 text-sm font-bold group-hover:text-red-500 transition-colors">02</span>
+                <div class="relative z-10">
+                    <h3 class="hero-title text-2xl mb-3 text-white group-hover:text-red-600 transition-colors">BRAKE</h3>
+                    <p class="text-gray-400 text-xs leading-relaxed opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
+                        Monitoring pad wear, fluid levels, rotors, ABS sensor performance, and handbrake.
+                    </p>
+                    <span class="inline-flex items-center gap-2 text-[9px] tracking-widest uppercase font-bold text-red-600 mt-4 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
+                        Explore <i class="fas fa-arrow-right text-[8px]"></i>
+                    </span>
+                </div>
+                <img src="images/brake.jpg" alt="Brake" class="absolute inset-0 w-full h-full object-cover opacity-20 group-hover:opacity-35 transition-all duration-500 scale-100 group-hover:scale-105">
+            </a>
+
+            <!-- 03 Wheels -->
+            <a href="knowledge.html?category=wheels" class="group relative overflow-hidden bg-neutral-950 aspect-[4/5] p-8 flex flex-col justify-between transition-all duration-300 hover:bg-red-600/10 border border-neutral-900 hover:border-red-600/30 rounded-md" id="card-wheels" style="text-decoration:none;">
+                <span class="text-gray-600 text-sm font-bold group-hover:text-red-500 transition-colors">03</span>
+                <div class="relative z-10">
+                    <h3 class="hero-title text-2xl mb-3 text-white group-hover:text-red-600 transition-colors">WHEELS</h3>
+                    <p class="text-gray-400 text-xs leading-relaxed opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
+                        Tire pressure, tread depth, rotation, alignment, DOT age code, and spare tire.
+                    </p>
+                    <span class="inline-flex items-center gap-2 text-[9px] tracking-widest uppercase font-bold text-red-600 mt-4 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
+                        Explore <i class="fas fa-arrow-right text-[8px]"></i>
+                    </span>
+                </div>
+                <img src="images/wheels.png" alt="Wheels" class="absolute inset-0 w-full h-full object-cover opacity-20 group-hover:opacity-35 transition-all duration-500 scale-100 group-hover:scale-105">
+            </a>
+
+            <!-- 04 Suspension -->
+            <a href="knowledge.html?category=suspension" class="group relative overflow-hidden bg-neutral-950 aspect-[4/5] p-8 flex flex-col justify-between transition-all duration-300 hover:bg-red-600/10 border border-neutral-900 hover:border-red-600/30 rounded-md" id="card-suspension" style="text-decoration:none;">
+                <span class="text-gray-600 text-sm font-bold group-hover:text-red-500 transition-colors">04</span>
+                <div class="relative z-10">
+                    <h3 class="hero-title text-2xl mb-3 text-white group-hover:text-red-600 transition-colors">SUSPENSION</h3>
+                    <p class="text-gray-400 text-xs leading-relaxed opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
+                        Shock absorbers, struts, control arms, ball joints, and rubber bushings.
+                    </p>
+                    <span class="inline-flex items-center gap-2 text-[9px] tracking-widest uppercase font-bold text-red-600 mt-4 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
+                        Explore <i class="fas fa-arrow-right text-[8px]"></i>
+                    </span>
+                </div>
+                <img src="images/suspension.jpg" alt="Suspension" class="absolute inset-0 w-full h-full object-cover opacity-20 group-hover:opacity-35 transition-all duration-500 scale-100 group-hover:scale-105">
+            </a>
+
+            <!-- 05 Battery -->
+            <a href="knowledge.html?category=battery" class="group relative overflow-hidden bg-neutral-950 aspect-[4/5] p-8 flex flex-col justify-between transition-all duration-300 hover:bg-red-600/10 border border-neutral-900 hover:border-red-600/30 rounded-md" id="card-battery" style="text-decoration:none;">
+                <span class="text-gray-600 text-sm font-bold group-hover:text-red-500 transition-colors">05</span>
+                <div class="relative z-10">
+                    <h3 class="hero-title text-2xl mb-3 text-white group-hover:text-red-600 transition-colors">BATTERY</h3>
+                    <p class="text-gray-400 text-xs leading-relaxed opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
+                        Cold cranking amps, terminal corrosion, alternator charging, and electrical system.
+                    </p>
+                    <span class="inline-flex items-center gap-2 text-[9px] tracking-widest uppercase font-bold text-red-600 mt-4 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
+                        Explore <i class="fas fa-arrow-right text-[8px]"></i>
+                    </span>
+                </div>
+                <img src="images/battery.jpg" alt="Battery" class="absolute inset-0 w-full h-full object-cover opacity-20 group-hover:opacity-35 transition-all duration-500 scale-100 group-hover:scale-105">
+            </a>
+
+            <!-- 06 Air Cond -->
+            <a href="knowledge.html?category=ac" class="group relative overflow-hidden bg-neutral-950 aspect-[4/5] p-8 flex flex-col justify-between transition-all duration-300 hover:bg-red-600/10 border border-neutral-900 hover:border-red-600/30 rounded-md" id="card-ac" style="text-decoration:none;">
+                <span class="text-gray-600 text-sm font-bold group-hover:text-red-500 transition-colors">06</span>
+                <div class="relative z-10">
+                    <h3 class="hero-title text-2xl mb-3 text-white group-hover:text-red-600 transition-colors">AIR COND</h3>
+                    <p class="text-gray-400 text-xs leading-relaxed opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
+                        Compressor health, refrigerant pressure, cabin filter, and evaporator coil.
+                    </p>
+                    <span class="inline-flex items-center gap-2 text-[9px] tracking-widest uppercase font-bold text-red-600 mt-4 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
+                        Explore <i class="fas fa-arrow-right text-[8px]"></i>
+                    </span>
+                </div>
+                <img src="images/ac.png" alt="Air Conditioning" class="absolute inset-0 w-full h-full object-cover opacity-20 group-hover:opacity-35 transition-all duration-500 scale-100 group-hover:scale-105">
+            </a>
+
+            <!-- 07 Electrical -->
+            <a href="knowledge.html?category=electrical" class="group relative overflow-hidden bg-neutral-950 aspect-[4/5] p-8 flex flex-col justify-between transition-all duration-300 hover:bg-red-600/10 border border-neutral-900 hover:border-red-600/30 rounded-md" id="card-electrical" style="text-decoration:none;">
+                <span class="text-gray-600 text-sm font-bold group-hover:text-red-500 transition-colors">07</span>
+                <div class="relative z-10">
+                    <h3 class="hero-title text-2xl mb-3 text-white group-hover:text-red-600 transition-colors">ELECTRICAL</h3>
+                    <p class="text-gray-400 text-xs leading-relaxed opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
+                        Fuses, relays, wiring harnesses, starter motor, and key sensor systems.
+                    </p>
+                    <span class="inline-flex items-center gap-2 text-[9px] tracking-widest uppercase font-bold text-red-600 mt-4 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
+                        Explore <i class="fas fa-arrow-right text-[8px]"></i>
+                    </span>
+                </div>
+                <img src="images/electrical.png" alt="Electrical" class="absolute inset-0 w-full h-full object-cover opacity-20 group-hover:opacity-35 transition-all duration-500 scale-100 group-hover:scale-105">
+            </a>
+
+            <!-- 08 Exhaust -->
+            <a href="knowledge.html?category=exhaust" class="group relative overflow-hidden bg-neutral-950 aspect-[4/5] p-8 flex flex-col justify-between transition-all duration-300 hover:bg-red-600/10 border border-neutral-900 hover:border-red-600/30 rounded-md" id="card-exhaust" style="text-decoration:none;">
+                <span class="text-gray-600 text-sm font-bold group-hover:text-red-500 transition-colors">08</span>
+                <div class="relative z-10">
+                    <h3 class="hero-title text-2xl mb-3 text-white group-hover:text-red-600 transition-colors">EXHAUST</h3>
+                    <p class="text-gray-400 text-xs leading-relaxed opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
+                        Catalytic converter, muffler, exhaust pipes, oxygen sensors, and emission controls.
+                    </p>
+                    <span class="inline-flex items-center gap-2 text-[9px] tracking-widest uppercase font-bold text-red-600 mt-4 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
+                        Explore <i class="fas fa-arrow-right text-[8px]"></i>
+                    </span>
+                </div>
+                <img src="images/exhaust.png" alt="Exhaust" class="absolute inset-0 w-full h-full object-cover opacity-20 group-hover:opacity-35 transition-all duration-500 scale-100 group-hover:scale-105">
+            </a>
+
+            <!-- 09 Lighting -->
+            <a href="knowledge.html?category=lighting" class="group relative overflow-hidden bg-neutral-950 aspect-[4/5] p-8 flex flex-col justify-between transition-all duration-300 hover:bg-red-600/10 border border-neutral-900 hover:border-red-600/30 rounded-md" id="card-lighting" style="text-decoration:none;">
+                <span class="text-gray-600 text-sm font-bold group-hover:text-red-500 transition-colors">09</span>
+                <div class="relative z-10">
+                    <h3 class="hero-title text-2xl mb-3 text-white group-hover:text-red-600 transition-colors">LIGHTING</h3>
+                    <p class="text-gray-400 text-xs leading-relaxed opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
+                        Headlamps, brake lights, turn signals, dashboard warning icons, and mirrors.
+                    </p>
+                    <span class="inline-flex items-center gap-2 text-[9px] tracking-widest uppercase font-bold text-red-600 mt-4 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
+                        Explore <i class="fas fa-arrow-right text-[8px]"></i>
+                    </span>
+                </div>
+                <img src="images/lighting.jpg" alt="Lighting" class="absolute inset-0 w-full h-full object-cover opacity-20 group-hover:opacity-35 transition-all duration-500 scale-100 group-hover:scale-105">
+            </a>
+
+        </div>
+    </div>
+</section>
+
+
+<!-- ══════════════════════════════
+     HOW IT WORKS
+ ═══════════════════════════════ -->
+<section class="bg-neutral-950 py-24 px-8 border-t border-neutral-900" id="how-it-works">
+    <div class="max-w-7xl mx-auto">
+        <div class="mb-16">
+            <h2 class="hero-title text-4xl md:text-5xl mb-3">HOW IT <span class="text-red-600">WORKS</span></h2>
+            <div class="h-1 w-20 bg-red-600"></div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="bg-neutral-900/30 border border-neutral-900 rounded-lg p-8 hover:border-red-600/30 hover:-translate-y-1 transition-all duration-300" id="step-1">
+                <div class="hero-title text-5xl font-black text-red-600/10 mb-4">01</div>
+                <i class="fas fa-car text-red-600 text-xl mb-4 block"></i>
+                <h3 class="text-white font-bold text-sm tracking-wider uppercase mb-3">Select Your Model</h3>
+                <p class="text-gray-500 text-xs leading-relaxed">Choose your Perodua model and variant from our comprehensive database covering all current and legacy Perodua models.</p>
+            </div>
+            <div class="bg-neutral-900/30 border border-neutral-900 rounded-lg p-8 hover:border-red-600/30 hover:-translate-y-1 transition-all duration-300" id="step-2">
+                <div class="hero-title text-5xl font-black text-red-600/10 mb-4">02</div>
+                <i class="fas fa-tachometer-alt text-red-600 text-xl mb-4 block"></i>
+                <h3 class="text-white font-bold text-sm tracking-wider uppercase mb-3">Input Mileage</h3>
+                <p class="text-gray-500 text-xs leading-relaxed">Enter your current odometer reading. Our intelligent engine maps out the exact service items due at your mileage milestone.</p>
+            </div>
+            <div class="bg-neutral-900/30 border border-neutral-900 rounded-lg p-8 hover:border-red-600/30 hover:-translate-y-1 transition-all duration-300" id="step-3">
+                <div class="hero-title text-5xl font-black text-red-600/10 mb-4">03</div>
+                <i class="fas fa-file-invoice-dollar text-red-600 text-xl mb-4 block"></i>
+                <h3 class="text-white font-bold text-sm tracking-wider uppercase mb-3">Get Your Quote</h3>
+                <p class="text-gray-500 text-xs leading-relaxed">Receive an automated, itemized cost estimate with genuine Perodua parts pricing and standard labour charges instantly.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- ══════════════════════════════
+     FOOTER
+ ═══════════════════════════════ -->
+<footer class="bg-black py-12 px-8 border-t border-neutral-900">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center text-gray-500 text-[10px] tracking-widest uppercase gap-4">
+        <div>
+            © 2026 Perodua Automated Advisor. All Rights Reserved.
+        </div>
+        <div class="flex space-x-8">
+            <a class="hover:text-white transition-colors" href="#">Privacy Policy</a>
+            <a class="hover:text-white transition-colors" href="#">Terms of Service</a>
+            <a class="hover:text-white transition-colors" href="#">Support</a>
+        </div>
+    </div>
+</footer>
+
+
+<!-- ══════════════════════════════
+     FLOATING CHATBOT WIDGET
+     DO NOT REMOVE: IDs are used by script.js for AI Chatbot functionality
+ ═══════════════════════════════ -->
+<div class="chatbot-toggle" id="chatbot-toggle-btn">
+    <i class="fas fa-comment-dots"></i>
+</div>
+<div class="chatbot-container" id="chatbot-panel">
+    <div class="chatbot-header">
+        <span>CarCare AI Advisor</span>
+        <i class="fas fa-times close-chat" id="chatbot-close-btn" style="cursor:pointer; opacity:0.8;"></i>
+    </div>
+    <div class="chatbot-body" id="chat-body">
+        <div class="msg bot-msg">Hello! I'm your CarCare AI Advisor, a professional automotive expert. How can I help you today? 🚗</div>
+    </div>
+    <div class="chatbot-footer">
+        <input type="text" id="chat-input-text" placeholder="Ask about your car…">
+        <button id="chat-send-btn"><i class="fas fa-paper-plane"></i></button>
+    </div>
+</div>
+
+
+<!-- ══════════════════════════════
+     SCRIPTS
+ ═══════════════════════════════ -->
+<script src="js/db-init.js"></script>
+<script src="js/script.js"></script>
+<script src="js/google-signin.js"></script>
+
+<script>
+(function () {
+    /* ── Navbar scroll effect ── */
+    const navbar = document.getElementById('main-navbar');
+    window.addEventListener('scroll', () => {
+        if (window.scrollY > 60) {
+            navbar.classList.add('scrolled');
+        } else {
+            navbar.classList.remove('scrolled');
+        }
+    });
+
+    /* ── Hero search: route to knowledge hub ── */
+    const heroSearchBtn = document.getElementById('hero-search-btn');
+    const heroSearchInput = document.getElementById('hero-search-input');
+    function doHeroSearch() {
+        const query = heroSearchInput ? heroSearchInput.value.trim() : '';
+        if (query) {
+            window.location.href = 'knowledge.html?search=' + encodeURIComponent(query);
+        } else {
+            window.location.href = 'quotes.html';
+        }
+    }
+    if (heroSearchBtn) heroSearchBtn.addEventListener('click', doHeroSearch);
+    if (heroSearchInput) {
+        heroSearchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') doHeroSearch();
+        });
+    }
+
+    /* ── Dashboard: show/hide panels based on auth state ── */
+    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+    const quotesPanel  = document.getElementById('recent-quotes-panel');
+    const quotesList   = document.getElementById('recent-quotes-list');
+    const servicesPanel = document.getElementById('services-panel');
+    const dashboardGrid = document.getElementById('dashboard-grid');
+
+    if (currentUser && currentUser.role === 'Customer') {
+        quotesPanel.style.display = 'flex';
+        quotesPanel.style.flexDirection = 'column';
+
+        (async () => {
+            let myQuotes = [];
+            let variants = [];
+            let cars = [];
+            try {
+                const [customersRes, quotesRes, variantsRes, modelsRes] = await Promise.all([
+                    fetch('/api/customers'),
+                    fetch('/api/quotes'),
+                    fetch('/api/variants'),
+                    fetch('/api/models')
+                ]);
+
+                if (customersRes.ok && quotesRes.ok && variantsRes.ok && modelsRes.ok) {
+                    const customers = await customersRes.json();
+                    const allQuotes = await quotesRes.json();
+                    variants = await variantsRes.json();
+                    cars = await modelsRes.json();
+
+                    const cusRecord = customers.find(c => c.userID === currentUser.userID);
+                    myQuotes = cusRecord
+                        ? allQuotes.filter(q => q.customerID === cusRecord.customerID)
+                        : [];
+                }
+            } catch (err) {
+                console.warn("Failed to fetch dashboard data via API, falling back to localStorage", err);
+                const customers = getTable('customerTable');
+                const cusRecord = customers.find(c => c.userID === currentUser.userID);
+                const allQuotes = getTable('quotationTable');
+                myQuotes = cusRecord
+                    ? allQuotes.filter(q => q.customerID === cusRecord.customerID)
+                    : [];
+                variants = getTable('carVariantTable');
+                cars = getTable('carModelTable') || getTable('carTable');
+            }
+
+            if (myQuotes.length === 0) {
+                quotesList.innerHTML = `
+                    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:2rem;text-align:center;">
+                        <i class="fas fa-file-invoice-dollar" style="font-size:2.5rem;color:var(--accent);margin-bottom:1rem;opacity:0.6;"></i>
+                        <h3 style="color:var(--text-light);margin-bottom:0.5rem;font-size:1rem;">No Quotations Yet</h3>
+                        <p style="color:var(--text-muted);margin-bottom:1.5rem;line-height:1.6;font-size:0.85rem;">Your service history is waiting to be written.<br>Get a precise cost estimate for your next maintenance.</p>
+                        <a href="quotes.html" style="background:var(--accent);color:white;padding:0.65rem 1.4rem;border-radius:5px;text-decoration:none;font-weight:700;font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;transition:background 0.25s;" onmouseover="this.style.background='var(--accent-hover)'" onmouseout="this.style.background='var(--accent)'">
+                            <i class="fas fa-calculator" style="margin-right:6px;"></i>Get Your Quotation
+                        </a>
+                    </div>`;
+            } else {
+                quotesList.innerHTML = '';
+                const recentThree = myQuotes.slice(0, 3);
+
+                recentThree.forEach(q => {
+                    const variant  = variants.find(v => v.variantID === q.variantID);
+                    const car      = variant ? cars.find(c => c.modelID === variant.modelID) : null;
+                    const carName  = car ? car.modelName.toUpperCase() : 'VEHICLE';
+                    const varName  = variant ? variant.variantName : '';
+                    
+                    const qDate = q.quoteDate ? new Date(q.quoteDate).toISOString().split('T')[0] : (q.date || '');
+
+                    const card = document.createElement('a');
+                    card.href = 'quotes.html';
+                    card.className = 'quote-card';
+                    card.innerHTML = `
+                        <div class="quote-info">
+                            <h3>${q.quoteID} — ${carName}</h3>
+                            <p style="margin: 0; color: var(--text-muted); font-size: 0.85rem;">${varName} &bull; ${parseInt(q.mileage).toLocaleString()} km &bull; ${qDate}</p>
+                        </div>
+                        <div class="quote-price">RM ${parseFloat(q.totalCost).toFixed(2)}</div>`;
+                    quotesList.appendChild(card);
+                });
+
+                if (myQuotes.length > 3) {
+                    const more = document.createElement('a');
+                    more.href = 'quotes.html';
+                    more.style.cssText = 'color:var(--accent);font-size:0.8rem;text-align:right;margin-top:0.75rem;text-decoration:none;font-weight:700;display:block;';
+                    more.innerHTML = `View all ${myQuotes.length} quotes &rarr;`;
+                    quotesList.appendChild(more);
+                }
+            }
+        })();
+    } else {
+        if (quotesPanel) quotesPanel.style.display = 'none';
+        if (servicesPanel) servicesPanel.style.flex = '1';
+    }
+})();
+</script>
+
+</body>
+
+</html>

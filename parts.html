@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parts Management - Service Advisor</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        .admin-table th, .admin-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+            color: black;
+        }
+        .admin-table th {
+            background-color: #444;
+            color: white;
+        }
+        .admin-input {
+            width: 100%;
+            padding: 5px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 400px;
+            color: black;
+        }
+        .modal-content h3 {
+            margin-top: 0;
+            color: var(--primary-red);
+        }
+        .form-group {
+            margin-bottom: 1rem;
+            text-align: left;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+            color: black;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <header class="navbar" id="main-navbar">
+        <a href="index.html" class="nav-brand" id="nav-brand-link">
+            <img src="images/perodua_logo.png" alt="Perodua Logo">
+        </a>
+        <nav class="nav-links" id="main-nav-links">
+            <a href="index.html">Home</a>
+            <a href="quotes.html">Quotes</a>
+            <a href="knowledge.html">Knowledge Hub</a>
+            <a href="locate.html">Locate</a>
+        </nav>
+        <div class="nav-auth" id="main-nav-auth">
+            <a href="signin.html">Sign In</a>
+        </div>
+    </header>
+
+    <div class="main-content">
+        <div class="page-container" style="max-width: 900px;">
+            <h2 class="section-title" style="color:var(--primary-red);"><i class="fas fa-tools"></i> Parts Management</h2>
+            
+            <div style="background:white; padding:1.5rem; border-radius:8px; border:1px solid #ddd; color: black;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1rem;">
+                    <h3 style="color: black;">Inventory Database Configuration</h3>
+                    <button class="btn-edit" onclick="openAddModal()"><i class="fas fa-plus"></i> Add New Part</button>
+                </div>
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Part / Service Name</th>
+                            <th>Code</th>
+                            <th>Price (RM)</th>
+                            <th>Is Mandatory?</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-parts-tbody">
+                        <!-- Populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Add Part Modal -->
+    <div id="add-part-modal" class="modal">
+        <div class="modal-content">
+            <h3><i class="fas fa-plus-circle"></i> Add New Car Part</h3>
+            <div class="form-group">
+                <label>Part Name</label>
+                <input type="text" id="add-part-name">
+            </div>
+            <div class="form-group">
+                <label>Part Code</label>
+                <input type="text" id="add-part-code">
+            </div>
+            <div class="form-group">
+                <label>Price (RM)</label>
+                <input type="number" step="0.01" id="add-part-price">
+            </div>
+            <div class="form-group">
+                <label>Is Mandatory?</label>
+                <select id="add-part-mandatory">
+                    <option value="true">Yes</option>
+                    <option value="false">No</option>
+                </select>
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 1.5rem;">
+                <button class="btn-primary" style="flex:1;" id="save-add-btn">Add Part</button>
+                <button class="btn-danger" style="flex:1;" onclick="closeAddModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Part Modal -->
+    <div id="edit-part-modal" class="modal">
+        <div class="modal-content">
+            <h3><i class="fas fa-edit"></i> Edit Car Part</h3>
+            <div class="form-group">
+                <label>Part Name</label>
+                <input type="text" id="edit-part-name">
+            </div>
+            <div class="form-group">
+                <label>Part Code</label>
+                <input type="text" id="edit-part-code">
+            </div>
+            <div class="form-group">
+                <label>Price (RM)</label>
+                <input type="number" step="0.01" id="edit-part-price">
+            </div>
+            <div class="form-group">
+                <label>Is Mandatory?</label>
+                <select id="edit-part-mandatory">
+                    <option value="true">Yes</option>
+                    <option value="false">No</option>
+                </select>
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 1.5rem;">
+                <button class="btn-primary" style="flex:1;" id="save-edit-btn">Save Changes</button>
+                <button class="btn-danger" style="flex:1;" onclick="closeEditModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chatbot (Included everywhere) -->
+    <div class="chatbot-toggle">
+        <i class="fas fa-comment-dots"></i>
+    </div>
+    <div class="chatbot-container">
+        <div class="chatbot-header">
+            <span>24/7 AI CHATBOT</span>
+            <i class="fas fa-times close-chat" style="cursor:pointer; opacity:0.7;"></i>
+        </div>
+        <div class="chatbot-body" id="chat-body">
+            <div class="msg bot-msg">Hello, how can I help you?</div>
+        </div>
+        <div class="chatbot-footer">
+            <input type="text" id="chat-input-text" placeholder="Type your message">
+            <button id="chat-send-btn"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
+
+    <script src="js/db-init.js"></script>
+    <script src="js/script.js"></script>
+    <script>
+        // Ensure Admin or Employee can access
+        const sessionUser = JSON.parse(localStorage.getItem('currentUser'));
+        if (!sessionUser) {
+            alert('Access Denied. Please log in.');
+            window.location.href = 'index.html';
+        } else {
+            const employees = getTable('employeeTable');
+            const emp = employees.find(e => e.userID === sessionUser.userID);
+            if (!emp || (emp.position !== 'Admin' && emp.position !== 'Employee' && emp.position !== 'Administrator')) {
+                alert('Access Denied. Employee or Administrator clearance required.');
+                window.location.href = 'index.html';
+            }
+        }
+
+        let editingPartID = null;
+
+        async function renderAdminTable() {
+            const tbody = document.getElementById('admin-parts-tbody');
+            tbody.innerHTML = '<tr><td colspan="5">Loading parts...</td></tr>';
+            
+            try {
+                const response = await fetch('/api/parts');
+                if (!response.ok) throw new Error('Failed to fetch parts');
+                
+                const parts = await response.json();
+                
+                // Keep a local copy in the DOM for the edit modal to easily access without re-fetching
+                window.currentLiveParts = parts;
+                
+                tbody.innerHTML = '';
+                parts.forEach(p => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${p.partName}</td>
+                        <td>${p.partCode}</td>
+                        <td>RM ${Number(p.price).toFixed(2)}</td>
+                        <td>${p.isMandatory ? 'Yes' : 'No'}</td>
+                        <td>
+                            <button class="btn-edit" style="padding: 8px 12px; border-radius:4px; margin-right:5px;" onclick="openEditModal('${p.partID}')"><i class="fas fa-edit"></i> Edit</button>
+                            <button class="btn-danger" style="padding: 8px 12px; border-radius:4px;" onclick="deletePart('${p.partID}', '${p.partName}')"><i class="fas fa-trash"></i> Delete</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (err) {
+                console.error(err);
+                tbody.innerHTML = '<tr><td colspan="5">Failed to load parts from database. Ensure server is running.</td></tr>';
+            }
+        }
+
+        function openEditModal(partID) {
+            const parts = window.currentLiveParts || [];
+            const p = parts.find(x => x.partID === partID);
+            if(p) {
+                editingPartID = partID;
+                document.getElementById('edit-part-name').value = p.partName;
+                document.getElementById('edit-part-code').value = p.partCode;
+                document.getElementById('edit-part-price').value = p.price;
+                document.getElementById('edit-part-mandatory').value = p.isMandatory ? 'true' : 'false';
+                document.getElementById('edit-part-modal').style.display = 'flex';
+            }
+        }
+
+        function closeEditModal() {
+            document.getElementById('edit-part-modal').style.display = 'none';
+        }
+
+        document.getElementById('save-edit-btn').addEventListener('click', async (e) => {
+            e.preventDefault(); 
+            
+            const newName = document.getElementById('edit-part-name').value.trim();
+            const newCode = document.getElementById('edit-part-code').value.trim();
+            const newPrice = parseFloat(document.getElementById('edit-part-price').value) || 0;
+            const newMandatory = document.getElementById('edit-part-mandatory').value === 'true';
+
+            if (!newName || !newCode) {
+                alert("Part Name and Code cannot be empty.");
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/parts/${editingPartID}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        partName: newName,
+                        partCode: newCode,
+                        price: newPrice,
+                        isMandatory: newMandatory
+                    })
+                });
+                
+                if (!response.ok) throw new Error('Failed to update part');
+                
+                await renderAdminTable();
+                closeEditModal();
+                alert("Part details successfully updated!");
+            } catch (err) {
+                console.error(err);
+                alert("Error: Failed to save changes to database.");
+            }
+        });
+
+        async function deletePart(partID, name) {
+            if(confirm('Delete ' + name + ' from the database? This may affect quote calculations forever.')) {
+                try {
+                    const response = await fetch(`/api/parts/${partID}`, { method: 'DELETE' });
+                    if (!response.ok) throw new Error('Failed to delete part');
+                    await renderAdminTable();
+                } catch (err) {
+                    console.error(err);
+                    alert("Error: Failed to delete part.");
+                }
+            }
+        }
+
+        function openAddModal() {
+            document.getElementById('add-part-name').value = '';
+            document.getElementById('add-part-code').value = '';
+            document.getElementById('add-part-price').value = '0.00';
+            document.getElementById('add-part-mandatory').value = 'false';
+            document.getElementById('add-part-modal').style.display = 'flex';
+        }
+
+        function closeAddModal() {
+            document.getElementById('add-part-modal').style.display = 'none';
+        }
+
+        document.getElementById('save-add-btn').addEventListener('click', async () => {
+            const newName = document.getElementById('add-part-name').value.trim();
+            const newCode = document.getElementById('add-part-code').value.trim();
+            const newPrice = parseFloat(document.getElementById('add-part-price').value) || 0;
+            const newMandatory = document.getElementById('add-part-mandatory').value === 'true';
+
+            if (!newName || !newCode) {
+                alert("Part Name and Code cannot be empty.");
+                return;
+            }
+
+            const parts = window.currentLiveParts || [];
+            const exists = parts.find(p => p.partName.toLowerCase() === newName.toLowerCase());
+            if (exists) {
+                alert("A part with this name already exists!");
+                return;
+            }
+
+            const newID = "p" + Date.now();
+            
+            try {
+                const response = await fetch('/api/parts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        partID: newID,
+                        categoryID: "cat1", // Default to engine category
+                        partName: newName,
+                        partCode: newCode,
+                        price: newPrice,
+                        isMandatory: newMandatory
+                    })
+                });
+                
+                if (!response.ok) throw new Error('Failed to add part');
+                
+                await renderAdminTable();
+                closeAddModal();
+                alert("New part successfully added!");
+            } catch (err) {
+                console.error(err);
+                alert("Error: Failed to add new part to database.");
+            }
+        });
+
+        renderAdminTable();
+    </script>
+</body>
+</html>

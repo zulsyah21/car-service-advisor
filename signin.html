@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In - Service Advisor</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .auth-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: calc(100vh - 100px);
+        }
+
+        .auth-card {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 450px;
+            text-align: center;
+            border-top: 5px solid var(--primary-green);
+        }
+
+        .auth-card h2 {
+            color: var(--primary-green);
+            margin-bottom: 2rem;
+            font-size: 1.8rem;
+        }
+
+        .google-btn {
+            background: white;
+            color: #333;
+            border: 1px solid #ddd;
+            width: 100%;
+            padding: 0.8rem;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            margin-bottom: 1.5rem;
+        }
+
+        .google-btn:hover {
+            background: #f5f5f5;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 1.5rem 0;
+            color: #777;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: "";
+            flex: 1;
+            border-bottom: 1px solid #eee;
+        }
+
+        .divider span {
+            padding: 0 10px;
+            font-size: 0.9rem;
+        }
+
+        .auth-link {
+            display: block;
+            margin-top: 1.5rem;
+            color: var(--primary-green);
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .auth-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header class="navbar" id="main-navbar">
+        <a href="index.html" class="nav-brand" id="nav-brand-link">
+            <img src="images/perodua_logo.png" alt="Perodua Logo">
+        </a>
+        <nav class="nav-links" id="main-nav-links">
+            <a href="index.html">Home</a>
+            <a href="quotes.html">Quotes</a>
+            <a href="knowledge.html">Knowledge Hub</a>
+            <a href="locate.html">Locate</a>
+        </nav>
+        <div class="nav-auth" id="main-nav-auth">
+            <a href="signin.html">Sign In</a>
+        </div>
+    </header>
+
+    <div class="auth-container">
+        <div class="auth-card">
+            <h2>Welcome Back</h2>
+
+            <!-- Google Sign-In -->
+            <button class="google-btn" id="google-signin-btn">
+                <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" width="20">
+                Sign In with Google
+            </button>
+
+            <div class="divider">
+                <span>OR</span>
+            </div>
+
+            <!-- Email / Username + Password form -->
+            <form id="signin-form">
+                <div class="form-group" style="text-align: left;">
+                    <label for="signin-username">Username or Email</label>
+                    <input type="text" id="signin-username" class="form-control"
+                           placeholder="Enter your username or email" autocomplete="username">
+                </div>
+
+                <div class="form-group" style="text-align: left;">
+                    <label for="signin-password">Password</label>
+                    <input type="password" id="signin-password" class="form-control"
+                           placeholder="••••••••" autocomplete="current-password">
+                </div>
+
+                <button type="submit" class="btn-primary" style="width: 100%;">Sign In</button>
+            </form>
+
+            <a href="signup.html" class="auth-link">Don't have an account? Sign Up</a>
+        </div>
+    </div>
+
+    <!-- Chatbot Widget -->
+    <div class="chatbot-toggle">
+        <i class="fas fa-comment-dots"></i>
+    </div>
+    <div class="chatbot-container">
+        <div class="chatbot-header">
+            <span>24/7 AI CHATBOT</span>
+            <i class="fas fa-times close-chat" style="cursor:pointer; opacity:0.7;"></i>
+        </div>
+        <div class="chatbot-body" id="chat-body">
+            <div class="msg bot-msg">Hello, how can I help you?</div>
+        </div>
+        <div class="chatbot-footer">
+            <input type="text" id="chat-input-text" placeholder="Type your message">
+            <button id="chat-send-btn"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
+
+    <script src="js/db-init.js"></script>
+    <script src="js/script.js"></script>
+    <script src="js/google-signin.js"></script>
+
+    <!-- ── Credential (username/email + password) sign-in handler ── -->
+    <script>
+        (function () {
+
+            /* Toast helper — same visual style as google-signin.js */
+            function showToast(message, type) {
+                const old = document.getElementById('google-signin-toast');
+                if (old) old.remove();
+
+                const toast = document.createElement('div');
+                toast.id = 'google-signin-toast';
+                toast.textContent = message;
+                Object.assign(toast.style, {
+                    position: 'fixed', bottom: '30px', right: '30px',
+                    padding: '14px 24px', borderRadius: '8px', color: '#fff',
+                    fontFamily: 'Inter, Roboto, sans-serif', fontSize: '15px',
+                    fontWeight: '600', boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
+                    zIndex: '99999', opacity: '0', transform: 'translateY(20px)',
+                    transition: 'all 0.3s ease',
+                    background: type === 'success'
+                        ? 'linear-gradient(135deg,#34a853,#1e7e34)'
+                        : 'linear-gradient(135deg,#ea4335,#b31412)'
+                });
+                document.body.appendChild(toast);
+
+                requestAnimationFrame(() => {
+                    toast.style.opacity = '1';
+                    toast.style.transform = 'translateY(0)';
+                });
+                setTimeout(() => {
+                    toast.style.opacity = '0';
+                    toast.style.transform = 'translateY(20px)';
+                    setTimeout(() => toast.remove(), 400);
+                }, 3500);
+            }
+
+            /* Form submit */
+            document.getElementById('signin-form').addEventListener('submit', async function (e) {
+                e.preventDefault();
+
+                const identifier = document.getElementById('signin-username').value.trim();
+                const password   = document.getElementById('signin-password').value;
+
+                if (!identifier || !password) {
+                    showToast('Please fill in all fields.', 'error');
+                    return;
+                }
+
+                try {
+                    const response = await fetch('/api/users/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username: identifier, password: password })
+                    });
+
+                    if (response.ok) {
+                        const user = await response.json();
+                        /* ✅ Success */
+                        localStorage.setItem('currentUser', JSON.stringify(user));
+                        showToast('Welcome back, ' + (user.fullName || user.username) + '! 👋', 'success');
+                        setTimeout(() => { window.location.href = 'index.html'; }, 1500);
+                    } else {
+                        const err = await response.json();
+                        showToast(err.error || 'Login failed. Please check your credentials.', 'error');
+                    }
+                } catch (err) {
+                    console.error('Login error:', err);
+                    // Fallback to localStorage if server is unreachable
+                    let users = [];
+                    try { users = JSON.parse(localStorage.getItem('userTable')) || []; } catch (_) {}
+                    
+                    const user = users.find(u =>
+                        (u.username || '').toLowerCase() === identifier.toLowerCase() ||
+                        (u.email    || '').toLowerCase() === identifier.toLowerCase()
+                    );
+
+                    if (!user) {
+                        showToast('Account not found. Please check your username or email.', 'error');
+                        return;
+                    }
+
+                    if (user.password !== password) {
+                        showToast('Incorrect password. Please try again.', 'error');
+                        return;
+                    }
+
+                    localStorage.setItem('currentUser', JSON.stringify(user));
+                    showToast('Welcome back, ' + (user.fullName || user.username) + '! 👋', 'success');
+                    setTimeout(() => { window.location.href = 'index.html'; }, 1500);
+                }
+            });
+
+        })();
+    </script>
+
+</body>
+
+</html>

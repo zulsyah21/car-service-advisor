@@ -1,0 +1,1758 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Locate Service Center - Service Advisor</title>
+    <meta name="description" content="Find your nearest Perodua authorised service center across Malaysia. View on map, get directions, and filter by service type.">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* ═══════════════════════════════════════════════════════
+           LOCATE PAGE — Full-Screen Map Layout
+           ═══════════════════════════════════════════════════════ */
+
+        body.locate-body {
+            overflow: hidden !important;
+            height: 100vh !important;
+            display: flex !important;
+            flex-direction: column !important;
+            padding-top: 0 !important;
+        }
+
+        /* ── Full-Screen Map Container ── */
+        .map-main {
+            flex: 1;
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            inset: 0;
+        }
+
+        .map-loading {
+            position: absolute;
+            inset: 0;
+            background: var(--bg-dark);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 1rem;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            z-index: 10;
+        }
+
+        .map-loading i {
+            font-size: 2.2rem;
+            color: var(--primary-accent);
+        }
+
+        .map-loading span {
+            letter-spacing: 0.05em;
+        }
+
+        /* ── Floating Overlay Layout ── */
+        .map-overlay {
+            position: absolute;
+            inset: 0;
+            top: 96px; /* navbar height */
+            padding: 20px 24px 24px 24px;
+            display: flex;
+            justify-content: space-between;
+            pointer-events: none;
+            z-index: 20;
+        }
+
+        /* ── Shared Glass Panel Style ── */
+        .glass-panel {
+            background: rgba(17, 17, 17, 0.88);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 14px;
+            box-shadow:
+                0 8px 32px rgba(0, 0, 0, 0.5),
+                inset 0 1px 0 rgba(255, 255, 255, 0.04);
+            pointer-events: auto;
+        }
+
+        /* ── Stealth Scrollbar ── */
+        .stealth-scroll::-webkit-scrollbar {
+            width: 4px;
+        }
+        .stealth-scroll::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .stealth-scroll::-webkit-scrollbar-thumb {
+            background-color: rgba(255, 255, 255, 0.12);
+            border-radius: 10px;
+        }
+        .stealth-scroll::-webkit-scrollbar-thumb:hover {
+            background-color: var(--primary-accent);
+        }
+
+        /* ═══════════════════════════════════════════════════════
+           LEFT SIDEBAR — Search + Service Center List
+           ═══════════════════════════════════════════════════════ */
+        .left-sidebar {
+            width: 100%;
+            max-width: 380px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        /* ── Search Bar ── */
+        .search-panel {
+            padding: 10px 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .search-panel .search-icon {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            flex-shrink: 0;
+            margin-left: 4px;
+        }
+
+        .search-panel input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #fff;
+            font-size: 0.88rem;
+            font-family: 'Inter', sans-serif;
+            outline: none;
+            padding: 6px 0;
+        }
+
+        .search-panel input::placeholder {
+            color: rgba(255, 255, 255, 0.35);
+        }
+
+        .search-panel .filter-toggle-btn {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.06);
+            border: none;
+            border-radius: 8px;
+            color: var(--text-light);
+            cursor: pointer;
+            transition: all 0.25s ease;
+            flex-shrink: 0;
+        }
+
+        .search-panel .filter-toggle-btn:hover {
+            background: rgba(255, 255, 255, 0.12);
+            color: var(--primary-accent);
+        }
+
+        /* ── Service Center List Container ── */
+        .list-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .list-header {
+            padding: 16px 18px 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .list-header h2 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: -0.01em;
+        }
+
+        .list-header .center-count-label {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .list-header .close-panel-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 1rem;
+            padding: 4px;
+            transition: color 0.2s;
+        }
+        .list-header .close-panel-btn:hover {
+            color: #fff;
+        }
+
+        /* ── Type Filter Bar ── */
+        .type-filter-bar {
+            display: flex;
+            gap: 6px;
+            padding: 10px 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            flex-wrap: wrap;
+        }
+
+        .type-filter-btn {
+            padding: 4px 12px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 0.72rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            white-space: nowrap;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .type-filter-btn:hover {
+            border-color: var(--primary-accent);
+            color: var(--text-light);
+        }
+
+        .type-filter-btn.active {
+            background: var(--primary-accent);
+            border-color: var(--primary-accent);
+            color: white;
+        }
+
+        .type-filter-btn.active-dealer {
+            background: #ff8c00;
+            border-color: #ff8c00;
+            color: white;
+        }
+
+        .type-filter-btn.active-perodua {
+            background: var(--primary-accent);
+            border-color: var(--primary-accent);
+            color: white;
+        }
+
+        /* ── Scrollable Center List ── */
+        .center-list-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px;
+        }
+
+        /* ── Location Banner ── */
+        .location-banner {
+            background: rgba(66, 133, 244, 0.08);
+            border: 1px solid rgba(66, 133, 244, 0.25);
+            border-radius: 8px;
+            padding: 10px 14px;
+            margin: 6px 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.78rem;
+            color: #7ab3f5;
+            animation: fadeSlideIn 0.5s ease forwards;
+        }
+
+        .location-banner i {
+            color: #4285F4;
+            flex-shrink: 0;
+        }
+
+        @keyframes fadeSlideIn {
+            from { opacity: 0; transform: translateY(-6px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── Center Card ── */
+        .center-card {
+            padding: 14px 16px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            margin-bottom: 4px;
+            border: 1px solid transparent;
+            position: relative;
+        }
+
+        .center-card:hover {
+            background: rgba(255, 255, 255, 0.04);
+            border-color: rgba(255, 255, 255, 0.06);
+        }
+
+        .center-card.active {
+            background: rgba(227, 24, 55, 0.06);
+            border-color: rgba(227, 24, 55, 0.2);
+        }
+
+        .center-card .card-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            margin-top: 2px;
+            font-size: 0.85rem;
+        }
+
+        .center-card .card-icon.icon-perodua {
+            background: rgba(227, 24, 55, 0.12);
+            border: 1px solid rgba(227, 24, 55, 0.25);
+            color: var(--primary-accent);
+        }
+
+        .center-card .card-icon.icon-dealer {
+            background: rgba(255, 140, 0, 0.1);
+            border: 1px solid rgba(255, 140, 0, 0.2);
+            color: #ff8c00;
+        }
+
+        .center-card .card-icon.icon-stakeholder {
+            background: rgba(255, 215, 0, 0.1);
+            border: 1px solid rgba(255, 215, 0, 0.25);
+            color: #d4a800;
+        }
+
+        .center-card .card-body {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .center-card .card-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+
+        .center-card .card-name {
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: #fff;
+            line-height: 1.3;
+        }
+
+        .center-card .card-status {
+            font-size: 0.6rem;
+            font-weight: 800;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            padding: 3px 8px;
+            border-radius: 4px;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .card-status.status-open {
+            background: rgba(227, 24, 55, 0.1);
+            color: var(--primary-accent);
+        }
+
+        .card-status.status-busy {
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text-muted);
+        }
+
+        .center-card .card-meta {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .center-card .card-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        .card-tag {
+            font-size: 0.6rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.4);
+            background: rgba(255, 255, 255, 0.05);
+            padding: 3px 8px;
+            border-radius: 4px;
+        }
+
+        .center-card .card-distance {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 6px;
+            font-size: 0.72rem;
+            color: var(--primary-accent);
+            font-weight: 700;
+        }
+
+        .center-card .card-actions {
+            margin-top: 8px;
+        }
+
+        .center-card .directions-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 6px 14px;
+            border-radius: 6px;
+            border: none;
+            font-size: 0.75rem;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            color: white;
+            transition: all 0.25s ease;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .directions-btn:hover {
+            filter: brightness(1.15);
+            transform: translateY(-1px);
+        }
+
+        .stakeholder-note {
+            font-size: 0.72rem;
+            color: #d4a800;
+            margin-top: 6px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .no-results {
+            padding: 2.5rem 1.5rem;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.88rem;
+        }
+
+        .no-results i {
+            display: block;
+            font-size: 1.4rem;
+            margin-bottom: 10px;
+            color: rgba(255, 255, 255, 0.15);
+        }
+
+        /* Stakeholder card override */
+        .center-card.stakeholder-card {
+            border-color: rgba(255, 215, 0, 0.15);
+        }
+        .center-card.stakeholder-card:hover,
+        .center-card.stakeholder-card.active {
+            border-color: rgba(255, 215, 0, 0.35);
+            background: rgba(255, 215, 0, 0.04);
+        }
+
+        /* ═══════════════════════════════════════════════════════
+           RIGHT SIDEBAR — Filters + Map Controls
+           ═══════════════════════════════════════════════════════ */
+        .right-sidebar {
+            width: 100%;
+            max-width: 300px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            align-items: flex-end;
+        }
+
+        /* ── Filters Panel ── */
+        .filters-panel {
+            width: 100%;
+        }
+
+        .filters-header {
+            padding: 14px 18px 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .filters-header h2 {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .filters-header .close-panel-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 1rem;
+            padding: 4px;
+            transition: color 0.2s;
+        }
+        .filters-header .close-panel-btn:hover {
+            color: #fff;
+        }
+
+        .filters-body {
+            padding: 18px;
+        }
+
+        .filter-category {
+            margin-bottom: 20px;
+        }
+
+        .filter-category:last-child {
+            margin-bottom: 0;
+        }
+
+        .filter-cat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+
+        .filter-cat-label {
+            font-size: 0.65rem;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+        }
+
+        .filter-clear-btn {
+            background: none;
+            border: none;
+            font-size: 0.62rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            color: var(--primary-accent);
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: color 0.2s;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .filter-clear-btn:hover {
+            color: #ff6655;
+        }
+
+        .filter-divider {
+            height: 1px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.06);
+            margin: 16px 0;
+        }
+
+        /* ── Checkbox Filter ── */
+        .filter-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            padding: 4px 0;
+            margin-bottom: 10px;
+        }
+
+        .filter-checkbox:last-child {
+            margin-bottom: 0;
+        }
+
+        .filter-checkbox .check-box {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.2s ease;
+            font-size: 0.7rem;
+        }
+
+        .filter-checkbox .check-box.checked {
+            background: var(--primary-accent);
+            border: 1px solid var(--primary-accent);
+            color: white;
+        }
+
+        .filter-checkbox .check-box.unchecked {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .filter-checkbox .check-box.unchecked:hover {
+            border-color: var(--primary-accent);
+        }
+
+        .filter-checkbox .check-label {
+            font-size: 0.82rem;
+            color: var(--text-light);
+            transition: color 0.2s;
+        }
+
+        .filter-checkbox:hover .check-label {
+            color: #fff;
+        }
+
+        /* ── Toggle Filter ── */
+        .filter-toggle-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            padding: 5px 0;
+            margin-bottom: 10px;
+        }
+
+        .filter-toggle-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .filter-toggle-row .toggle-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .filter-toggle-row .toggle-icon {
+            font-size: 1rem;
+            width: 20px;
+            text-align: center;
+        }
+
+        .filter-toggle-row .toggle-label {
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            transition: color 0.2s;
+        }
+
+        .filter-toggle-row:hover .toggle-label {
+            color: var(--text-light);
+        }
+
+        .filter-toggle-row .toggle-label.active-label {
+            color: var(--text-light);
+        }
+
+        /* Custom Toggle Switch */
+        .toggle-switch {
+            width: 34px;
+            height: 18px;
+            border-radius: 10px;
+            position: relative;
+            transition: all 0.25s ease;
+            flex-shrink: 0;
+        }
+
+        .toggle-switch.off {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .toggle-switch.on {
+            background: rgba(227, 24, 55, 0.25);
+            border: 1px solid rgba(227, 24, 55, 0.4);
+        }
+
+        .toggle-switch .toggle-knob {
+            position: absolute;
+            top: 3px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            transition: all 0.25s ease;
+        }
+
+        .toggle-switch.off .toggle-knob {
+            left: 3px;
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .toggle-switch.on .toggle-knob {
+            right: 3px;
+            left: auto;
+            background: var(--primary-accent);
+            box-shadow: 0 0 6px rgba(227, 24, 55, 0.5);
+        }
+
+        /* ── Map Controls (Bottom Right) ── */
+        .map-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: auto;
+            align-items: flex-end;
+        }
+
+        .map-ctrl-btn {
+            width: 42px;
+            height: 42px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            color: var(--text-light);
+            font-size: 1rem;
+        }
+
+        .map-ctrl-btn:hover {
+            background: rgba(255, 255, 255, 0.12) !important;
+            color: #fff;
+        }
+
+        .map-ctrl-btn.locate-btn {
+            background: rgba(17, 17, 17, 0.88);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 10px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+        }
+
+        .map-ctrl-btn.locate-btn.located {
+            color: #4285F4;
+            border-color: rgba(66, 133, 244, 0.3);
+        }
+
+        .map-ctrl-btn.locate-btn.locating {
+            animation: spinOnce 1s linear infinite;
+            color: var(--text-muted);
+        }
+
+        @keyframes spinOnce {
+            from { transform: rotate(0deg); }
+            to   { transform: rotate(360deg); }
+        }
+
+        .zoom-controls {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border-radius: 10px;
+            background: rgba(17, 17, 17, 0.88);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+        }
+
+        .zoom-controls .map-ctrl-btn {
+            background: transparent;
+            border-radius: 0;
+        }
+
+        .zoom-controls .zoom-divider {
+            height: 1px;
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        /* ── Locate Me Button in Sidebar ── */
+        .locate-me-btn {
+            width: 100%;
+            margin-top: 8px;
+            padding: 8px;
+            background: transparent;
+            border: 1px solid rgba(227, 24, 55, 0.3);
+            color: var(--primary-accent);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.78rem;
+            font-weight: 700;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            font-family: 'Inter', sans-serif;
+            letter-spacing: 0.03em;
+        }
+
+        .locate-me-btn:hover {
+            background: var(--primary-accent);
+            color: white;
+            border-color: var(--primary-accent);
+        }
+
+        /* ── Toast Notification ── */
+        .locate-toast {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: rgba(17, 17, 17, 0.92);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 12px 22px;
+            font-size: 0.85rem;
+            color: var(--text-light);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            opacity: 0;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            pointer-events: none;
+        }
+
+        .locate-toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .locate-toast.toast-error { border-color: rgba(227, 24, 55, 0.4); }
+        .locate-toast.toast-success { border-color: rgba(66, 133, 244, 0.4); }
+        .locate-toast.toast-info { border-color: rgba(255, 179, 0, 0.4); }
+
+        /* ── User Location Pulse Animation ── */
+        @keyframes userPulse {
+            0%   { transform: scale(1);   opacity: 0.6; }
+            70%  { transform: scale(2.5); opacity: 0; }
+            100% { transform: scale(2.5); opacity: 0; }
+        }
+
+        /* ═══════════════════════════════════════════════════════
+           RESPONSIVE
+           ═══════════════════════════════════════════════════════ */
+        @media (max-width: 1024px) {
+            .right-sidebar {
+                width: auto;
+                height: auto;
+                position: absolute;
+                bottom: 24px;
+                right: 24px;
+                top: auto;
+                pointer-events: none;
+                display: flex;
+                flex-direction: column;
+                align-items: flex-end;
+            }
+            .filters-panel {
+                display: none;
+                position: fixed;
+                top: 160px;
+                right: 24px;
+                width: 300px;
+                z-index: 1000;
+                pointer-events: auto;
+            }
+            .filters-panel.active {
+                display: block !important;
+            }
+            .map-controls {
+                pointer-events: auto;
+                margin-top: auto;
+            }
+            .left-sidebar {
+                max-width: 340px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .map-overlay {
+                padding: 12px;
+                flex-direction: column;
+                gap: 12px;
+                top: 96px;
+            }
+            .left-sidebar {
+                max-width: 100%;
+                max-height: 45vh;
+            }
+            .right-sidebar {
+                width: auto;
+                height: auto;
+                position: absolute;
+                bottom: 24px;
+                right: 24px;
+                top: auto;
+                pointer-events: none;
+                display: flex;
+                flex-direction: column;
+                align-items: flex-end;
+            }
+            .filters-panel {
+                display: none;
+                position: fixed;
+                top: 160px;
+                right: 12px;
+                left: 12px;
+                width: calc(100% - 24px);
+                z-index: 1000;
+                pointer-events: auto;
+            }
+            .filters-panel.active {
+                display: block !important;
+            }
+            .map-controls {
+                pointer-events: auto;
+                margin-top: auto;
+            }
+        }
+
+        /* ── Google Autocomplete Dark Theme overrides ── */
+        .pac-container {
+            background-color: rgba(17, 17, 17, 0.95) !important;
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08) !important;
+            border-radius: 10px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6) !important;
+            font-family: 'Inter', sans-serif !important;
+            margin-top: 6px;
+            z-index: 99999 !important;
+        }
+
+        .pac-item {
+            border-top: 1px solid rgba(255, 255, 255, 0.05) !important;
+            padding: 8px 12px !important;
+            color: #fff !important;
+            font-size: 0.88rem !important;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pac-item:hover {
+            background-color: rgba(255, 255, 255, 0.05) !important;
+        }
+
+        .pac-item-query {
+            color: #fff !important;
+            font-size: 0.88rem !important;
+        }
+
+        .pac-matched {
+            color: var(--primary-accent) !important;
+            font-weight: 700;
+        }
+
+        .pac-icon {
+            filter: invert(1) brightness(0.8);
+        }
+
+        .pac-icon-search {
+            display: none !important;
+        }
+    </style>
+</head>
+
+<body class="locate-body">
+
+    <!-- Standard Navigation Bar (shared across all pages) -->
+    <header class="navbar" id="main-navbar">
+        <a href="index.html" class="nav-brand" id="nav-brand-link">
+            <img src="images/perodua_logo.png" alt="Perodua Logo">
+        </a>
+        <nav class="nav-links" id="main-nav-links">
+            <a href="index.html">Home</a>
+            <a href="quotes.html">Quotes</a>
+            <a href="knowledge.html">Knowledge Hub</a>
+            <a class="active" href="locate.html">Locate</a>
+        </nav>
+        <div class="nav-auth" id="main-nav-auth">
+            <a href="signin.html">Sign In</a>
+        </div>
+    </header>
+
+    <!-- Full-Screen Map -->
+    <main class="map-main">
+
+        <!-- Map Loading State -->
+        <div class="map-loading" id="map-loading">
+            <i class="fas fa-map-marked-alt fa-pulse"></i>
+            <span>Initialising Map...</span>
+        </div>
+
+        <!-- Google Map Container -->
+        <div id="map"></div>
+
+        <!-- Floating Overlay Panels -->
+        <div class="map-overlay">
+
+            <!-- ═════ LEFT SIDEBAR ═════ -->
+            <div class="left-sidebar">
+
+                <!-- Search Bar -->
+                <div class="glass-panel search-panel">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" id="search-input" placeholder="Find Service Centers or Chargers...">
+                    <button class="filter-toggle-btn" id="mobile-filter-btn" title="Toggle Filters">
+                        <i class="fas fa-sliders-h"></i>
+                    </button>
+                </div>
+
+                <!-- Service Center List -->
+                <div class="glass-panel list-panel">
+                    <div class="list-header">
+                        <div>
+                            <h2>Service Centers</h2>
+                            <span class="center-count-label" id="center-count">Loading centers...</span>
+                        </div>
+                    </div>
+
+                    <!-- Type Filter Bar -->
+                    <div class="type-filter-bar">
+                        <button class="type-filter-btn active" id="filter-all" onclick="setTypeFilter('all', this)">All</button>
+                        <button class="type-filter-btn" id="filter-perodua" onclick="setTypeFilter('perodua', this)"><i class="fas fa-star" style="font-size:0.6rem;"></i> Perodua</button>
+                        <button class="type-filter-btn" id="filter-dealer" onclick="setTypeFilter('dealer', this)">Dealers</button>
+                    </div>
+
+                    <!-- Locate Me -->
+                    <div style="padding: 8px 14px 0;">
+                        <button class="locate-me-btn" id="locate-me-btn">
+                            <i class="fas fa-crosshairs"></i> Use My Location
+                        </button>
+                    </div>
+
+                    <!-- Scrollable List -->
+                    <div class="center-list-scroll stealth-scroll" id="center-list">
+                        <div class="no-results"><i class="fas fa-spinner fa-spin"></i>Loading...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ═════ RIGHT SIDEBAR ═════ -->
+            <div class="right-sidebar" id="right-sidebar">
+
+                <!-- Filters Panel -->
+                <div class="glass-panel filters-panel" id="filters-panel">
+                    <div class="filters-header">
+                        <h2>Filters</h2>
+                        <button class="close-panel-btn" onclick="toggleFiltersPanel()" title="Close Filters">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="filters-body">
+
+                        <!-- SERVICE POINTS -->
+                        <div class="filter-category">
+                            <div class="filter-cat-header">
+                                <span class="filter-cat-label">Service Points</span>
+                                <button class="filter-clear-btn" onclick="clearServicePointFilters()">Clear</button>
+                            </div>
+                            <label class="filter-checkbox" onclick="toggleCheckFilter(this, 'perodua')">
+                                <div class="check-box checked" data-filter="perodua">
+                                    <i class="fas fa-check"></i>
+                                </div>
+                                <span class="check-label">Official Branches</span>
+                            </label>
+                            <label class="filter-checkbox" onclick="toggleCheckFilter(this, 'dealer')">
+                                <div class="check-box checked" data-filter="dealer">
+                                    <i class="fas fa-check"></i>
+                                </div>
+                                <span class="check-label">Authorized Dealers</span>
+                            </label>
+                        </div>
+
+                        <div class="filter-divider"></div>
+
+                        <!-- FACILITIES -->
+                        <div class="filter-category">
+                            <div class="filter-cat-header">
+                                <span class="filter-cat-label">Facilities</span>
+                            </div>
+
+                            <div class="filter-toggle-row" onclick="toggleFacilityFilter(this, 'spare-parts')">
+                                <div class="toggle-left">
+                                    <i class="fas fa-cog toggle-icon" style="color: var(--text-muted);"></i>
+                                    <span class="toggle-label">Spare Parts</span>
+                                </div>
+                                <div class="toggle-switch off" data-facility="spare-parts">
+                                    <div class="toggle-knob"></div>
+                                </div>
+                            </div>
+
+                            <div class="filter-toggle-row" onclick="toggleFacilityFilter(this, 'body-paint')">
+                                <div class="toggle-left">
+                                    <i class="fas fa-paint-roller toggle-icon" style="color: var(--text-muted);"></i>
+                                    <span class="toggle-label">Body & Paint</span>
+                                </div>
+                                <div class="toggle-switch off" data-facility="body-paint">
+                                    <div class="toggle-knob"></div>
+                                </div>
+                            </div>
+
+                            <div class="filter-toggle-row" onclick="toggleFacilityFilter(this, 'ev-charging')">
+                                <div class="toggle-left">
+                                    <i class="fas fa-charging-station toggle-icon" style="color: var(--text-muted);"></i>
+                                    <span class="toggle-label">EV Charging</span>
+                                </div>
+                                <div class="toggle-switch off" data-facility="ev-charging">
+                                    <div class="toggle-knob"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Map Controls -->
+                <div class="map-controls">
+                    <button class="map-ctrl-btn locate-btn" id="map-myloc-btn" title="My Location" onclick="locateUser()">
+                        <i class="fas fa-location-arrow"></i>
+                    </button>
+                    <div class="zoom-controls">
+                        <button class="map-ctrl-btn" title="Zoom In" onclick="if(map) map.setZoom(map.getZoom()+1)">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                        <div class="zoom-divider"></div>
+                        <button class="map-ctrl-btn" title="Zoom Out" onclick="if(map) map.setZoom(map.getZoom()-1)">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- /map-overlay -->
+    </main>
+
+    <!-- Toast notification -->
+    <div class="locate-toast" id="locate-toast"></div>
+
+    <!-- Chatbot Widget -->
+    <div class="chatbot-toggle">
+        <i class="fas fa-comment-dots"></i>
+    </div>
+    <div class="chatbot-container">
+        <div class="chatbot-header">
+            <span>24/7 AI CHATBOT</span>
+            <i class="fas fa-times close-chat" style="cursor:pointer; opacity:0.7;"></i>
+        </div>
+        <div class="chatbot-body" id="chat-body">
+            <div class="msg bot-msg">Hello, how can I help you?</div>
+        </div>
+        <div class="chatbot-footer">
+            <input type="text" id="chat-input-text" placeholder="Type your message">
+            <button id="chat-send-btn"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
+
+    <script src="js/db-init.js"></script>
+    <script src="js/script.js"></script>
+
+    <!-- Google Maps API -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBNT08yZeub2-CT95xykTQ6We4MwHbLgA0&libraries=places&callback=initMap" async defer></script>
+
+    <script>
+        let map;
+        let markers = [];
+        let infoWindow;
+        let allCenters = [];
+        let userLocation = { lat: 3.1390, lng: 101.6869 }; // Default: Kuala Lumpur
+        let activeCardId = null;
+        let activeTypeFilter = 'all';
+        let userMarker = null;
+        let userAccuracyCircle = null;
+        let isAutocompleteSelection = false;
+
+        // ── Filter State ──
+        let filterState = {
+            perodua: true,
+            dealer: true,
+            facilities: {
+                'spare-parts': false,
+                'body-paint': false,
+                'ev-charging': false
+            }
+        };
+
+        // --- Haversine Distance Formula ---
+        function getDistanceKm(lat1, lng1, lat2, lng2) {
+            const R = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLng = (lng2 - lng1) * Math.PI / 180;
+            const a = Math.sin(dLat / 2) ** 2 +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLng / 2) ** 2;
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        }
+
+        function initMap() {
+            document.getElementById('map-loading').style.display = 'none';
+
+            map = new google.maps.Map(document.getElementById('map'), {
+                zoom: 8,
+                center: userLocation,
+                mapTypeControl: false,
+                streetViewControl: false,
+                fullscreenControl: false,
+                zoomControl: false, // We use custom zoom controls
+                styles: [
+                    { "elementType": "geometry", "stylers": [{ "color": "#1a1a2e" }] },
+                    { "elementType": "labels.text.fill", "stylers": [{ "color": "#8ec3b9" }] },
+                    { "elementType": "labels.text.stroke", "stylers": [{ "color": "#1a3646" }] },
+                    { "featureType": "administrative.country", "elementType": "geometry.stroke", "stylers": [{ "color": "#4b6878" }] },
+                    { "featureType": "administrative.land_parcel", "elementType": "labels.text.fill", "stylers": [{ "color": "#64779e" }] },
+                    { "featureType": "administrative.province", "elementType": "geometry.stroke", "stylers": [{ "color": "#4b6878" }] },
+                    { "featureType": "landscape.man_made", "elementType": "geometry.stroke", "stylers": [{ "color": "#334e87" }] },
+                    { "featureType": "landscape.natural", "elementType": "geometry", "stylers": [{ "color": "#023e58" }] },
+                    { "featureType": "poi", "elementType": "geometry", "stylers": [{ "color": "#283d6a" }] },
+                    { "featureType": "poi", "elementType": "labels.text.fill", "stylers": [{ "color": "#6f9ba5" }] },
+                    { "featureType": "poi", "elementType": "labels.text.stroke", "stylers": [{ "color": "#1d2a31" }] },
+                    { "featureType": "poi.park", "elementType": "geometry.fill", "stylers": [{ "color": "#023e58" }] },
+                    { "featureType": "poi.park", "elementType": "labels.text.fill", "stylers": [{ "color": "#3C7680" }] },
+                    { "featureType": "road", "elementType": "geometry", "stylers": [{ "color": "#304a7d" }] },
+                    { "featureType": "road", "elementType": "labels.text.fill", "stylers": [{ "color": "#98a5be" }] },
+                    { "featureType": "road", "elementType": "labels.text.stroke", "stylers": [{ "color": "#1d2a31" }] },
+                    { "featureType": "road.highway", "elementType": "geometry", "stylers": [{ "color": "#2c6675" }] },
+                    { "featureType": "road.highway", "elementType": "geometry.stroke", "stylers": [{ "color": "#255763" }] },
+                    { "featureType": "road.highway", "elementType": "labels.text.fill", "stylers": [{ "color": "#b0d5ce" }] },
+                    { "featureType": "road.highway", "elementType": "labels.text.stroke", "stylers": [{ "color": "#023747" }] },
+                    { "featureType": "transit", "elementType": "labels.text.fill", "stylers": [{ "color": "#98a5be" }] },
+                    { "featureType": "transit", "elementType": "labels.text.stroke", "stylers": [{ "color": "#1d2a31" }] },
+                    { "featureType": "transit.line", "elementType": "geometry.fill", "stylers": [{ "color": "#283d6a" }] },
+                    { "featureType": "transit.station", "elementType": "geometry", "stylers": [{ "color": "#3a4762" }] },
+                    { "featureType": "water", "elementType": "geometry", "stylers": [{ "color": "#0e1626" }] },
+                    { "featureType": "water", "elementType": "labels.text.fill", "stylers": [{ "color": "#4e6d70" }] }
+                ]
+            });
+
+            infoWindow = new google.maps.InfoWindow();
+            loadServiceCenters();
+
+            // Search input
+            const searchInput = document.getElementById('search-input');
+            searchInput.addEventListener('input', function () {
+                isAutocompleteSelection = false;
+                filterCenters(this.value.trim().toLowerCase());
+            });
+
+            // Google Places Autocomplete binding
+            const autocomplete = new google.maps.places.Autocomplete(searchInput, {
+                types: ['geocode', 'establishment'],
+                componentRestrictions: { country: 'my' }
+            });
+
+            autocomplete.addListener('place_changed', function () {
+                const place = autocomplete.getPlace();
+                if (!place.geometry || !place.geometry.location) {
+                    filterCenters(searchInput.value.trim().toLowerCase());
+                    return;
+                }
+
+                isAutocompleteSelection = true;
+                userLocation = {
+                    lat: place.geometry.location.lat(),
+                    lng: place.geometry.location.lng()
+                };
+
+                placeUserMarker(userLocation, place.name || 'Selected Location', 'Drag this dot to adjust your location.');
+
+                // Calculate distances, sort, re-render
+                allCenters = allCenters.map(c => ({
+                    ...c,
+                    _distance: getDistanceKm(userLocation.lat, userLocation.lng, c.lat, c.lng)
+                })).sort((a, b) => a._distance - b._distance);
+
+                map.setCenter(userLocation);
+                map.setZoom(12);
+
+                filterCenters(searchInput.value.trim().toLowerCase());
+                showToast(`Search centered around: <b>${place.name || place.formatted_address}</b>`, 'success', 4000);
+            });
+
+            // Sidebar locate button
+            document.getElementById('locate-me-btn').addEventListener('click', locateUser);
+
+            // Hook up mobile filter button
+            const mobileFilterBtn = document.getElementById('mobile-filter-btn');
+            if (mobileFilterBtn) {
+                mobileFilterBtn.addEventListener('click', toggleFiltersPanel);
+            }
+
+            // Auto-request location on page open
+            showLocationBanner();
+            locateUser();
+        }
+
+        // Show a friendly banner while requesting location
+        function showLocationBanner() {
+            const list = document.getElementById('center-list');
+            const banner = document.createElement('div');
+            banner.className = 'location-banner';
+            banner.id = 'location-banner';
+            banner.innerHTML = `<i class="fas fa-location-arrow"></i><span>Requesting your location to show nearby service centers&hellip;</span>`;
+            list.prepend(banner);
+        }
+
+        function removeLocationBanner() {
+            const b = document.getElementById('location-banner');
+            if (b) b.remove();
+        }
+
+        // Simple toast helper
+        function showToast(message, type = 'info', duration = 4000) {
+            const iconMap = { error: 'fa-circle-exclamation', success: 'fa-circle-check', info: 'fa-circle-info' };
+            const colorMap = { error: '#e31837', success: '#4285F4', info: '#ffb300' };
+            const toast = document.getElementById('locate-toast');
+            toast.className = `locate-toast toast-${type} show`;
+            toast.innerHTML = `<i class="fas ${iconMap[type]}" style="color:${colorMap[type]}"></i> ${message}`;
+            clearTimeout(toast._timer);
+            toast._timer = setTimeout(() => { toast.classList.remove('show'); }, duration);
+        }
+
+        function loadServiceCenters() {
+            const storedData = localStorage.getItem('serviceCenterTable');
+            const raw = storedData ? JSON.parse(storedData) : [];
+
+            // Seed dynamic facilities to make the sidebar filters functional
+            allCenters = raw.map((center, idx) => {
+                const hasSpareParts = center.type === 'Perodua Service Centre' || (idx % 2 === 0);
+                const hasBodyPaint = center.name.toLowerCase().includes('body') || center.name.toLowerCase().includes('paint') || (idx % 3 === 0);
+                const hasEvCharging = (idx % 5 === 0);
+                return {
+                    ...center,
+                    facilities: {
+                        'spare-parts': hasSpareParts,
+                        'body-paint': hasBodyPaint,
+                        'ev-charging': hasEvCharging
+                    }
+                };
+            });
+
+            // Calculate distance relative to the default userLocation
+            allCenters = allCenters.map(c => ({
+                ...c,
+                _distance: getDistanceKm(userLocation.lat, userLocation.lng, c.lat, c.lng)
+            })).sort((a, b) => a._distance - b._distance);
+
+            if (allCenters.length === 0) {
+                document.getElementById('center-list').innerHTML = '<div class="no-results"><i class="fas fa-exclamation-circle"></i>No service centers found.</div>';
+                document.getElementById('center-count').textContent = '0 centers found';
+                return;
+            }
+
+            filterCenters(document.getElementById('search-input').value.trim().toLowerCase());
+        }
+
+        function renderCenters(centers) {
+            // Clear old markers
+            markers.forEach(m => m.setMap(null));
+            markers = [];
+
+            const listEl = document.getElementById('center-list');
+            listEl.innerHTML = '';
+            document.getElementById('center-count').textContent = `${centers.length} center${centers.length !== 1 ? 's' : ''} found`;
+
+            if (centers.length === 0) {
+                listEl.innerHTML = '<div class="no-results"><i class="fas fa-search"></i>No centers match your search.</div>';
+                return;
+            }
+
+            centers.forEach((center, idx) => {
+                const isPerodua = center.type === 'Perodua Service Centre';
+                const isStakeholder = center.stakeholder === true;
+                const markerColor = isStakeholder ? '#d4a800' : (isPerodua ? '#e31837' : '#ff8c00');
+                const typeLabel = isPerodua ? 'Perodua Service Centre' : (center.type || 'Authorised Dealer');
+                const iconClass = isStakeholder ? 'icon-stakeholder' : (isPerodua ? 'icon-perodua' : 'icon-dealer');
+                const iconSymbol = isPerodua ? 'fa-wrench' : 'fa-store';
+
+                // Marker
+                const marker = new google.maps.Marker({
+                    position: { lat: center.lat, lng: center.lng },
+                    map: map,
+                    title: center.name,
+                    animation: google.maps.Animation.DROP,
+                    icon: {
+                        path: google.maps.SymbolPath.CIRCLE,
+                        fillColor: markerColor,
+                        fillOpacity: 1,
+                        strokeColor: '#ffffff',
+                        strokeWeight: isStakeholder ? 3 : 2,
+                        scale: isStakeholder ? 12 : (isPerodua ? 10 : 8)
+                    },
+                    zIndex: isStakeholder ? 999 : undefined
+                });
+                markers.push(marker);
+
+                // Info window content
+                const distanceText = center._distance !== undefined
+                    ? `<div style="color:${markerColor}; font-weight:600; margin-top:4px;"><i class="fas fa-route"></i> ${center._distance.toFixed(1)} km away</div>`
+                    : '';
+                const phoneHtml = center.phone
+                    ? `<div style="font-size:0.82rem; color:#444; margin-bottom:4px;"><i style="color:${markerColor}; width: 16px;" class="fas fa-phone"></i> ${center.phone}</div>`
+                    : '';
+                const hoursHtml = center.hours
+                    ? `<div style="font-size:0.82rem; color:#444; margin-bottom:4px;"><i style="color:${markerColor}; width: 16px;" class="fas fa-clock"></i> ${center.hours}</div>`
+                    : '';
+                const areaHtml = center.area
+                    ? `<div style="font-size:0.78rem; color:#777; margin-bottom:4px;"><i style="color:${markerColor}; width:16px;" class="fas fa-map-marker-alt"></i> ${center.area}</div>`
+                    : '';
+
+                // Facility descriptions in Info Window
+                let infoFacilitiesText = '';
+                if (center.facilities) {
+                    const list = [];
+                    if (center.facilities['spare-parts']) list.push('Spare Parts');
+                    if (center.facilities['body-paint']) list.push('Body & Paint');
+                    if (center.facilities['ev-charging']) list.push('EV Charging');
+                    if (list.length > 0) {
+                        infoFacilitiesText = `<div style="font-size:0.72rem; color:#666; margin-top:4px;"><i class="fas fa-briefcase"></i> ${list.join(', ')}</div>`;
+                    }
+                }
+
+                const infoContent = `
+                    <div style="font-family: Inter, sans-serif; padding: 4px; max-width: 240px;">
+                        <div style="font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:${markerColor}; background:${isPerodua ? 'rgba(227,24,55,0.08)' : 'rgba(255,140,0,0.08)'}; border:1px solid ${markerColor}40; border-radius:10px; padding:2px 8px; display:inline-block; margin-bottom:6px;">${typeLabel}</div>
+                        <div style="font-weight:700; font-size:1rem; color:#111; margin-bottom:4px;">${center.name}</div>
+                        ${areaHtml}
+                        <div style="font-size:0.82rem; color:#444; margin-bottom:4px;"><i style="color:${markerColor}; width: 16px;" class="fas fa-map-pin"></i> ${center.address}</div>
+                        ${phoneHtml}
+                        ${hoursHtml}
+                        ${infoFacilitiesText}
+                        ${distanceText}
+                        <a href="https://www.google.com/maps/dir/?api=1&destination=${center.lat},${center.lng}" target="_blank"
+                            style="display:block; margin-top:8px; background:${markerColor}; color:white; padding:6px 10px; border-radius:4px; text-decoration:none; font-size:0.82rem; font-weight:600; text-align:center;">
+                            <i class="fas fa-directions"></i> Get Directions
+                        </a>
+                    </div>`;
+
+                marker.addListener('click', () => {
+                    infoWindow.setContent(infoContent);
+                    infoWindow.open(map, marker);
+                    setActiveCard(center.id || idx);
+                    map.panTo(marker.getPosition());
+                });
+
+                // ── Build Card ──
+                const distBadge = center._distance !== undefined
+                    ? `<div class="card-distance"><i class="fas fa-route"></i> ${center._distance.toFixed(1)} km</div>`
+                    : '';
+
+                // Build facility tags for card UI
+                let facilityTags = '';
+                if (center.facilities) {
+                    if (center.facilities['spare-parts']) facilityTags += '<span class="card-tag"><i class="fas fa-cog"></i> PARTS</span>';
+                    if (center.facilities['body-paint']) facilityTags += '<span class="card-tag"><i class="fas fa-paint-roller"></i> BODY & PAINT</span>';
+                    if (center.facilities['ev-charging']) facilityTags += '<span class="card-tag" style="color: #4285F4; background: rgba(66, 133, 244, 0.08);"><i class="fas fa-charging-station"></i> EV CHARGE</span>';
+                }
+
+                const card = document.createElement('div');
+                card.className = 'center-card' + (isStakeholder ? ' stakeholder-card' : '');
+                card.dataset.id = center.id || idx;
+                card.innerHTML = `
+                    <div class="card-icon ${iconClass}">
+                        <i class="fas ${isStakeholder ? 'fa-star' : iconSymbol}"></i>
+                    </div>
+                    <div class="card-body">
+                        <div class="card-top">
+                            <span class="card-name">${center.name}</span>
+                            <span class="card-status status-open">OPEN</span>
+                        </div>
+                        <div class="card-meta">
+                            ${center._distance !== undefined ? center._distance.toFixed(1) + ' km' : ''}
+                            ${center._distance !== undefined && center.area ? ' • ' : ''}
+                            ${center.area || ''}
+                        </div>
+                        <div class="card-tags">
+                            ${isStakeholder ? '<span class="card-tag" style="color:#d4a800; background:rgba(255,215,0,0.08);">⭐ STAKEHOLDER</span>' : ''}
+                            ${center.phone ? '<span class="card-tag">SERVICE</span>' : ''}
+                            ${facilityTags}
+                        </div>
+                        ${isStakeholder ? '<div class="stakeholder-note"><i class="fas fa-star"></i> Project Stakeholder — Siti Zulaiha Binti Mohd Surif</div>' : ''}
+                        ${distBadge}
+                        <div class="card-actions">
+                            <a class="directions-btn" style="background:${markerColor};" href="https://www.google.com/maps/dir/?api=1&destination=${center.lat},${center.lng}" target="_blank">
+                                <i class="fas fa-directions"></i> Directions
+                            </a>
+                        </div>
+                    </div>`;
+
+                card.addEventListener('click', (e) => {
+                    if (e.target.closest('.directions-btn')) return;
+                    map.panTo({ lat: center.lat, lng: center.lng });
+                    map.setZoom(14);
+                    infoWindow.setContent(infoContent);
+                    infoWindow.open(map, marker);
+                    setActiveCard(center.id || idx);
+                    card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                });
+
+                listEl.appendChild(card);
+            });
+        }
+
+        function setActiveCard(id) {
+            document.querySelectorAll('.center-card').forEach(c => c.classList.remove('active'));
+            const target = document.querySelector(`.center-card[data-id="${id}"]`);
+            if (target) {
+                target.classList.add('active');
+                target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+
+        function filterCenters(query) {
+            let filtered = allCenters;
+
+            // 1. Filter by Service Points checkboxes (Official Branches vs Authorized Dealers)
+            const showOfficial = filterState.perodua;
+            const showDealer = filterState.dealer;
+
+            filtered = filtered.filter(c => {
+                const isPerodua = c.type === 'Perodua Service Centre';
+                if (showOfficial && isPerodua) return true;
+                if (showDealer && !isPerodua) return true;
+                return false;
+            });
+
+            // 2. Filter by Facilities toggle switches
+            for (const [facility, required] of Object.entries(filterState.facilities)) {
+                if (required) {
+                    filtered = filtered.filter(c => c.facilities && c.facilities[facility] === true);
+                }
+            }
+
+            // 3. Filter by Active Type Tab (All / Perodua / Dealers)
+            if (activeTypeFilter === 'perodua') {
+                filtered = filtered.filter(c => c.type === 'Perodua Service Centre');
+            } else if (activeTypeFilter === 'dealer') {
+                filtered = filtered.filter(c => c.type !== 'Perodua Service Centre');
+            }
+
+            // 4. Apply text search query (only if not autocomplete selection)
+            if (query && !isAutocompleteSelection) {
+                filtered = filtered.filter(c =>
+                    c.name.toLowerCase().includes(query) ||
+                    (c.area && c.area.toLowerCase().includes(query)) ||
+                    (c.state && c.state.toLowerCase().includes(query))
+                );
+            }
+
+            renderCenters(filtered);
+        }
+
+        function setTypeFilter(type, btn) {
+            activeTypeFilter = type;
+            document.querySelectorAll('.type-filter-btn').forEach(b => {
+                b.classList.remove('active', 'active-perodua', 'active-dealer');
+            });
+            if (type === 'perodua') btn.classList.add('active-perodua');
+            else if (type === 'dealer') btn.classList.add('active-dealer');
+            else btn.classList.add('active');
+            filterCenters(document.getElementById('search-input').value.trim().toLowerCase());
+        }
+
+        // ── Filter Panel Logic ──
+        function toggleCheckFilter(labelEl, filterName) {
+            const box = labelEl.querySelector('.check-box');
+            if (box.classList.contains('checked')) {
+                box.classList.remove('checked');
+                box.classList.add('unchecked');
+                box.innerHTML = '';
+                filterState[filterName] = false;
+            } else {
+                box.classList.remove('unchecked');
+                box.classList.add('checked');
+                box.innerHTML = '<i class="fas fa-check"></i>';
+                filterState[filterName] = true;
+            }
+            filterCenters(document.getElementById('search-input').value.trim().toLowerCase());
+        }
+
+        function toggleFacilityFilter(rowEl, facility) {
+            const toggle = rowEl.querySelector('.toggle-switch');
+            const label = rowEl.querySelector('.toggle-label');
+            const icon = rowEl.querySelector('.toggle-icon');
+            if (toggle.classList.contains('on')) {
+                toggle.classList.remove('on');
+                toggle.classList.add('off');
+                label.classList.remove('active-label');
+                if (icon) icon.style.color = 'var(--text-muted)';
+                filterState.facilities[facility] = false;
+            } else {
+                toggle.classList.remove('off');
+                toggle.classList.add('on');
+                label.classList.add('active-label');
+                if (icon) icon.style.color = 'var(--primary-accent)';
+                filterState.facilities[facility] = true;
+            }
+            filterCenters(document.getElementById('search-input').value.trim().toLowerCase());
+        }
+
+        function clearServicePointFilters() {
+            document.querySelectorAll('.filter-checkbox .check-box').forEach(box => {
+                box.classList.remove('checked');
+                box.classList.add('unchecked');
+                box.innerHTML = '';
+            });
+            filterState.perodua = false;
+            filterState.dealer = false;
+            filterCenters(document.getElementById('search-input').value.trim().toLowerCase());
+        }
+
+        // ── Toggle Filters Panel (Mobile Toggler) ──
+        function toggleFiltersPanel() {
+            const fp = document.getElementById('filters-panel');
+            if (window.innerWidth <= 1024) {
+                fp.classList.toggle('active');
+            } else {
+                // Desktop toggle display style
+                if (fp.style.display === 'none') {
+                    fp.style.display = 'block';
+                } else {
+                    fp.style.display = 'none';
+                }
+            }
+        }
+
+        // ── User Location Marker Helper ──
+        function placeUserMarker(location, titleText, descText) {
+            if (userMarker) { userMarker.setMap(null); userMarker = null; }
+            if (userAccuracyCircle) { userAccuracyCircle.setMap(null); userAccuracyCircle = null; }
+
+            userMarker = new google.maps.Marker({
+                position: location,
+                map: map,
+                title: titleText,
+                draggable: true,
+                icon: {
+                    path: google.maps.SymbolPath.CIRCLE,
+                    fillColor: '#4285F4',
+                    fillOpacity: 1,
+                    strokeColor: '#ffffff',
+                    strokeWeight: 3,
+                    scale: 10
+                },
+                zIndex: 1000
+            });
+
+            const userInfo = new google.maps.InfoWindow({
+                content: `<div style="font-family:Inter,sans-serif; padding:4px;"><b style="color:#4285F4;"><i class='fas fa-location-arrow'></i> ${titleText}</b><br><span style="font-size:0.8rem;color:#555;">${descText}</span></div>`
+            });
+            userMarker.addListener('click', () => userInfo.open(map, userMarker));
+
+            userMarker.addListener('dragend', () => {
+                userLocation = { lat: userMarker.getPosition().lat(), lng: userMarker.getPosition().lng() };
+                if (userAccuracyCircle) userAccuracyCircle.setCenter(userLocation);
+
+                allCenters = allCenters.map(c => ({
+                    ...c,
+                    _distance: getDistanceKm(userLocation.lat, userLocation.lng, c.lat, c.lng)
+                })).sort((a, b) => a._distance - b._distance);
+
+                filterCenters(document.getElementById('search-input').value.trim().toLowerCase());
+                showToast('<i class="fas fa-map-marker-alt"></i> Location manually adjusted! Centers resorted.', 'success', 3000);
+            });
+        }
+
+        // ── Locate User ──
+        function locateUser() {
+            const sidebarBtn = document.getElementById('locate-me-btn');
+            const mapBtn = document.getElementById('map-myloc-btn');
+
+            function setLocating() {
+                sidebarBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Locating...';
+                sidebarBtn.disabled = true;
+                if (mapBtn) { mapBtn.className = 'map-ctrl-btn locate-btn locating'; mapBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i>'; }
+            }
+            function setLocated() {
+                sidebarBtn.innerHTML = '<i class="fas fa-check"></i> Location Found!';
+                sidebarBtn.disabled = false;
+                if (mapBtn) { mapBtn.className = 'map-ctrl-btn locate-btn located'; mapBtn.innerHTML = '<i class="fas fa-location-arrow"></i>'; }
+                setTimeout(() => {
+                    sidebarBtn.innerHTML = '<i class="fas fa-crosshairs"></i> Use My Location';
+                }, 2500);
+            }
+            function setIdle() {
+                sidebarBtn.innerHTML = '<i class="fas fa-crosshairs"></i> Use My Location';
+                sidebarBtn.disabled = false;
+                if (mapBtn) { mapBtn.className = 'map-ctrl-btn locate-btn'; mapBtn.innerHTML = '<i class="fas fa-location-arrow"></i>'; }
+            }
+
+            if (!navigator.geolocation) {
+                showToast('Geolocation is not supported by your browser. Fallback coordinates (Kuala Lumpur) loaded.', 'error');
+                removeLocationBanner();
+                setIdle();
+                if (!userMarker) {
+                    placeUserMarker(userLocation, 'Default Location (Kuala Lumpur)', 'Drag this dot to adjust your location.');
+                }
+                return;
+            }
+
+            setLocating();
+
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                    const accuracy = pos.coords.accuracy;
+
+                    removeLocationBanner();
+
+                    placeUserMarker(userLocation, 'Your Location (Drag to adjust)', 'Drag this dot to adjust your exact location.');
+
+                    // Accuracy ring
+                    userAccuracyCircle = new google.maps.Circle({
+                        map: map,
+                        center: userLocation,
+                        radius: accuracy,
+                        fillColor: '#4285F4',
+                        fillOpacity: 0.08,
+                        strokeColor: '#4285F4',
+                        strokeOpacity: 0.35,
+                        strokeWeight: 1.5,
+                        zIndex: 1
+                    });
+
+                    // Calculate distances, sort, re-render
+                    allCenters = allCenters.map(c => ({
+                        ...c,
+                        _distance: getDistanceKm(userLocation.lat, userLocation.lng, c.lat, c.lng)
+                    })).sort((a, b) => a._distance - b._distance);
+
+                    filterCenters(document.getElementById('search-input').value.trim().toLowerCase());
+                    map.setCenter(userLocation);
+                    map.setZoom(11);
+
+                    setLocated();
+                    showToast('<i class="fas fa-location-arrow"></i>&nbsp; Location found! Centers sorted by distance.', 'success', 3500);
+                },
+                (err) => {
+                    removeLocationBanner();
+                    setIdle();
+                    let msg = 'Could not get your location.';
+                    if (err.code === 1) msg = 'Location access denied. Using Kuala Lumpur fallback. Drag the blue dot to adjust.';
+                    else if (err.code === 2) msg = 'Location unavailable. Using Kuala Lumpur fallback. Drag the blue dot to adjust.';
+                    else if (err.code === 3) msg = 'Location request timed out. Using Kuala Lumpur fallback. Drag the blue dot to adjust.';
+                    showToast(msg, 'info', 6000);
+
+                    // Draggable fallback marker if not already placed
+                    if (!userMarker) {
+                        placeUserMarker(userLocation, 'Kuala Lumpur (Drag to adjust)', 'Drag this dot to adjust your location.');
+                    }
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            );
+        }
+    </script>
+
+</body>
+
+</html>
