@@ -1,0 +1,41 @@
+{
+  "name": "Web-Based Automated Car Service Advisor",
+  "description": "An automated car service advisor web application for Perodua vehicles, powered by Gemini AI.",
+  "keywords": ["node", "express", "mysql", "gemini"],
+  "stack": "heroku-22",
+  "buildpacks": [
+    {
+      "url": "heroku/nodejs"
+    }
+  ],
+  "addons": [
+    {
+      "plan": "jawsdb:kitefin",
+      "as": "JAWSDB"
+    }
+  ],
+  "env": {
+    "GEMINI_API_KEY": {
+      "description": "Your Google Gemini API key for the AI chatbot feature.",
+      "required": true
+    },
+    "FRONTEND_URL": {
+      "description": "The public URL of your deployed Heroku app (e.g. https://your-app-name.herokuapp.com). Used for CORS.",
+      "required": false
+    },
+    "NODE_ENV": {
+      "description": "Node environment. Set to production on Heroku.",
+      "value": "production",
+      "required": true
+    }
+  },
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "basic"
+    }
+  },
+  "scripts": {
+    "postdeploy": "node db/seed.js"
+  }
+}

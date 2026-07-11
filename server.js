@@ -22,15 +22,17 @@ app.use(helmet({
 const allowedOrigins = [
   'http://localhost:3000',
   'http://127.0.0.1:3000',
-  // TODO: Replace with your actual Name.com domain once set up:
-  // 'https://www.yourcaradvisor.com',
-  process.env.FRONTEND_URL, // Set this env var on Heroku when you have your domain
+  process.env.FRONTEND_URL, // Set this env var on Heroku to your app's public URL
 ].filter(Boolean); // Remove undefined entries
+
+// Also allow any *.herokuapp.com origin dynamically (for Heroku review apps / staging)
 
 app.use(cors({
   origin: function (origin, callback) {
     // Allow requests with no origin (e.g. Postman, server-to-server, Heroku health checks)
     if (!origin) return callback(null, true);
+    // Allow *.herokuapp.com automatically (covers the deployed app itself)
+    if (origin.endsWith('.herokuapp.com')) return callback(null, true);
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
@@ -69,12 +71,14 @@ app.use('/api/users/login', authLimiter);
 app.use('/api/users/register', authLimiter);
 
 // ─── DATABASE CONNECTION ──────────────────────────────────────────────────────
-// Supports both local .env vars AND Heroku's JawsDB MySQL add-on (JAWSDB_URL)
+// Supports local .env, Heroku JawsDB (JAWSDB_URL), and generic DATABASE_URL
 let pool;
-if (process.env.JAWSDB_URL) {
-  // Heroku JawsDB provides a full MySQL connection URL
+const cloudDbUrl = process.env.JAWSDB_URL || process.env.DATABASE_URL;
+
+if (cloudDbUrl) {
+  // Heroku JawsDB / ClearDB / generic MySQL connection URL
   // Format: mysql://user:password@host:port/database
-  const dbUrl = new URL(process.env.JAWSDB_URL);
+  const dbUrl = new URL(cloudDbUrl);
   pool = mysql.createPool({
     host: dbUrl.hostname,
     port: dbUrl.port || 3306,
@@ -86,7 +90,7 @@ if (process.env.JAWSDB_URL) {
     queueLimit: 0,
     ssl: { rejectUnauthorized: false }, // Required for Heroku cloud MySQL
   });
-  console.log('Database: Connected via JAWSDB_URL (Heroku)');
+  console.log('Database: Connected via cloud URL (Heroku/JawsDB)');
 } else {
   // Local development — use individual .env variables
   pool = mysql.createPool({
@@ -136,11 +140,34 @@ app.post('/api/chatbot', async (req, res) => {
     return res.status(500).json({ error: 'Gemini API key is not configured on the server.' });
   }
 
+  // 1. Fetch live context from database
+  let dbContext = '';
+  try {
+    const [models] = await pool.query('SELECT modelID, brand, modelName FROM car_models');
+    const [parts] = await pool.query('SELECT partID, partName, partCode, price, isMandatory FROM service_parts');
+    
+    dbContext = `
+Here is the live database context of our workshop:
+1. Supported Perodua Car Models:
+${models.map(m => `- ${m.brand} ${m.modelName} (ID: ${m.modelID})`).join('\n')}
+
+2. Live Parts Inventory & Standard Pricing:
+${parts.map(p => `- ${p.partName} (${p.partCode}): RM ${parseFloat(p.price).toFixed(2)} [${p.isMandatory ? 'Mandatory' : 'Optional'}]`).join('\n')}
+`;
+  } catch (dbErr) {
+    console.warn("Could not load DB context for chatbot, using default:", dbErr);
+  }
+
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
-      model: 'gemini-1.5-flash',
-      systemInstruction: 'You are CarCare AI Advisor, a professional automotive expert. You provide reliable, safe, and professional answers to queries about car maintenance, troubleshooting, technical specifications, and service milestones. Be helpful and direct, formatting your response with markdown where appropriate.'
+      model: 'gemini-2.0-flash',
+      systemInstruction: `You are CarCare AI Advisor, a professional automotive expert. You provide reliable, safe, and professional answers to queries about car maintenance, troubleshooting, technical specifications, and service milestones. Be helpful and direct, formatting your response with markdown where appropriate.
+
+Use the following live database context of our workshop to answer questions accurately when users ask about parts pricing, codes, or car models:
+${dbContext}
+
+Note: Standard prices listed are in RM (Ringgit Malaysia). Always advise the user based on these exact prices when they ask about specific parts stored in our database. If a part isn't listed, you can provide general automotive estimates but mention it's not in our standard inventory.`
     });
 
     // Map history to SDK-expected format
@@ -530,6 +557,27 @@ app.get('/api/centers', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
+// Bind to 0.0.0.0 so Heroku (and other cloud platforms) can route traffic in
+const server = app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server running on port ${PORT}`);
+});
+
+// ─── GRACEFUL SHUTDOWN ────────────────────────────────────────────────────────
+// Heroku sends SIGTERM before shutting down a dyno — handle it cleanly
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received — shutting down gracefully');
+  server.close(() => {
+    console.log('HTTP server closed');
+    pool.end(() => {
+      console.log('Database pool closed');
+      process.exit(0);
+    });
+  });
+});
+
+process.on('SIGINT', () => {
+  console.log('SIGINT received — shutting down gracefully');
+  server.close(() => {
+    pool.end(() => process.exit(0));
+  });
 });
