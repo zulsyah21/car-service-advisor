@@ -22,7 +22,8 @@ app.use(helmet({
 const allowedOrigins = [
   'http://localhost:3000',
   'http://127.0.0.1:3000',
-  process.env.FRONTEND_URL, // Set this env var on Heroku to your app's public URL
+  'https://wacsa-uitm.herokuapp.com', // Production Heroku URL
+  process.env.FRONTEND_URL, // Override via env var if needed
 ].filter(Boolean); // Remove undefined entries
 
 // Also allow any *.herokuapp.com origin dynamically (for Heroku review apps / staging)
