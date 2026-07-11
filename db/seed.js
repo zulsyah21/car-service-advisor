@@ -1,4 +1,4 @@
-﻿/**
+/**
  * db/seed.js
  * Runs init.sql against the connected database.
  * Used as the Heroku postdeploy hook to create tables and insert seed data.
@@ -39,7 +39,13 @@ async function seed() {
 
   // ─── Read init.sql ────────────────────────────────────────────────────────────
   const sqlFile = path.join(__dirname, "init.sql");
-  const sql = fs.readFileSync(sqlFile, "utf8");
+  let sql = fs.readFileSync(sqlFile, "utf8");
+
+  // Strip CREATE DATABASE and USE statements if deploying to JawsDB (since you don't have root permissions)
+  if (cloudDbUrl) {
+    sql = sql.replace(/CREATE DATABASE[\s\S]*?USE\s+\w+;/i, "");
+    console.log("Seed: Stripped database creation commands for JawsDB compatibility.");
+  }
 
   // ─── Connect and run ──────────────────────────────────────────────────────────
   let conn;
