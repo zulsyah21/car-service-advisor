@@ -22,7 +22,7 @@ app.use(helmet({
 const allowedOrigins = [
   'http://localhost:3000',
   'http://127.0.0.1:3000',
-  'https://wacsa-uitm.herokuapp.com', // Production Heroku URL
+  'https://web-based-car-service-advisor.herokuapp.com', // Production Heroku URL
   process.env.FRONTEND_URL, // Override via env var if needed
 ].filter(Boolean); // Remove undefined entries
 

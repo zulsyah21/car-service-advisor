@@ -1,5 +1,5 @@
 ﻿{
-  "name": "wacsa-uitm",
+  "name": "web-based-car-service-advisor",
   "description": "An automated car service advisor web application for Perodua vehicles, powered by Gemini AI.",
   "keywords": ["node", "express", "mysql", "gemini"],
   "stack": "heroku-22",
@@ -39,4 +39,5 @@
     "postdeploy": "node db/seed.js"
   }
 }
+
 
