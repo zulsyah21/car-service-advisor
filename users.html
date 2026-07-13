@@ -178,14 +178,30 @@
         // Ensure only Admin can access
         const sessionUser = JSON.parse(localStorage.getItem('currentUser'));
         if (!sessionUser) {
-            alert('Access Denied. Please log in.');
-            window.location.href = 'index.html';
+            window.showModal({
+                title: "Access Denied",
+                message: "Please log in to access this page.",
+                type: "error",
+                confirmText: "Login Page",
+                showCancel: false,
+                onConfirm: () => {
+                    window.location.href = 'signin.html';
+                }
+            });
         } else {
             const employees = getTable('employeeTable');
             const emp = employees.find(e => e.userID === sessionUser.userID);
             if (!emp || emp.position !== 'Admin') {
-                alert('Access Denied. Administrator clearance required.');
-                window.location.href = 'index.html';
+                window.showModal({
+                    title: "Access Denied",
+                    message: "Administrator clearance required.",
+                    type: "error",
+                    confirmText: "Back to Home",
+                    showCancel: false,
+                    onConfirm: () => {
+                        window.location.href = 'index.html';
+                    }
+                });
             }
         }
 
@@ -238,17 +254,24 @@
         }
 
         async function deleteUser(userID, username) {
-            if(confirm(`Are you absolutely sure you want to delete user account '${username}'? This action cannot be undone.`)) {
-                try {
-                    const response = await fetch(`/api/users/${userID}`, { method: 'DELETE' });
-                    if (!response.ok) throw new Error('Failed to delete user');
-                    alert('Account deleted successfully!');
-                    await renderUsersTable();
-                } catch (err) {
-                    console.error(err);
-                    alert('Error: Failed to delete user from database.');
+            window.showModal({
+                title: "Delete User Account",
+                message: `Are you sure you want to delete user account '${username}'? This action cannot be undone.`,
+                type: "warning",
+                confirmText: "Delete",
+                cancelText: "Cancel",
+                onConfirm: async () => {
+                    try {
+                        const response = await fetch(`/api/users/${userID}`, { method: 'DELETE' });
+                        if (!response.ok) throw new Error('Failed to delete user');
+                        window.showToast('Account deleted successfully!', 'success');
+                        await renderUsersTable();
+                    } catch (err) {
+                        console.error(err);
+                        window.showToast('Error: Failed to delete user from database.', 'error');
+                    }
                 }
-            }
+            });
         }
 
         function openAddEmployeeModal() {

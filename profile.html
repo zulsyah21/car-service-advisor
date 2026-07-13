@@ -117,8 +117,16 @@
                 } catch (_) {}
 
                 if (!currentUser) {
-                    alert('You must be signed in to view this page. Redirecting...');
-                    window.location.href = 'signin.html';
+                    window.showModal({
+                        title: "Authentication Required",
+                        message: "You must be signed in to view this page. Redirecting to sign in...",
+                        type: "warning",
+                        confirmText: "Sign In",
+                        showCancel: false,
+                        onConfirm: () => {
+                            window.location.href = 'signin.html';
+                        }
+                    });
                 }
             }
 

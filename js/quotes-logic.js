@@ -427,8 +427,16 @@
     // ─── SAVE QUOTATION TO DATABASE ──────────────────────────────────────────
     function saveQuotation() {
         if (!currentUser) {
-            alert("Authentication Required: Please sign in or register to save your quotations.");
-            window.location.href = 'signin.html';
+            window.showModal({
+                title: "Authentication Required",
+                message: "Please sign in or register to save your quotation estimates.",
+                type: "warning",
+                confirmText: "Sign In Now",
+                cancelText: "Continue as Guest",
+                onConfirm: () => {
+                    window.location.href = 'signin.html';
+                }
+            });
             return;
         }
 
@@ -438,7 +446,13 @@
         const rawMileage = mileageInput.value;
 
         if (!modelID || !variantID || currentGeneratedItems.length === 0) {
-            alert("No quotation data: Please generate a cost estimate first.");
+            window.showModal({
+                title: "No Data to Save",
+                message: "Please select a model and variant, enter mileage, and click 'Generate Quote' first.",
+                type: "warning",
+                confirmText: "OK",
+                showCancel: false
+            });
             return;
         }
 
@@ -446,37 +460,93 @@
         const customerRecord = customers.find(c => c.userID === currentUser.userID);
 
         if (!customerRecord) {
-            alert("Error: You must be registered as a Customer to save quotes. Staff and Admin accounts are restricted to read-only.");
+            window.showModal({
+                title: "Restricted Access",
+                message: "You must be registered as a Customer to save quotes. Staff and Admin accounts are restricted to read-only views.",
+                type: "error",
+                confirmText: "OK",
+                showCancel: false
+            });
             return;
         }
 
         const allQuotes = window.getTable('quotationTable') || [];
         const allQuoteParts = window.getTable('quotationPartTable') || [];
-
         const today = new Date().toISOString().split('T')[0];
 
-        if (activeEditingQuoteID) {
-            // Updating existing quote
-            if (!confirm("Are you sure you want to save these updated quotation details?")) {
-                return;
-            }
-            const index = allQuotes.findIndex(q => q.quoteID === activeEditingQuoteID);
-            if (index > -1) {
-                allQuotes[index].variantID = variantID;
-                allQuotes[index].mileage = parseInt(rawMileage);
-                allQuotes[index].region = region;
-                allQuotes[index].totalCost = currentCalculatedTotal;
-                allQuotes[index].date = today;
+        const executeSave = () => {
+            if (activeEditingQuoteID) {
+                // Updating existing quote
+                const index = allQuotes.findIndex(q => q.quoteID === activeEditingQuoteID);
+                if (index > -1) {
+                    allQuotes[index].variantID = variantID;
+                    allQuotes[index].mileage = parseInt(rawMileage);
+                    allQuotes[index].region = region;
+                    allQuotes[index].totalCost = currentCalculatedTotal;
+                    allQuotes[index].date = today;
+
+                    window.saveTable('quotationTable', allQuotes);
+
+                    // Clear old items and insert fresh
+                    const filteredParts = allQuoteParts.filter(qp => qp.quoteID !== activeEditingQuoteID);
+                    const dbItems = [];
+                    currentGeneratedItems.forEach((item, index) => {
+                        const newItem = {
+                            quotePartID: `qp_${activeEditingQuoteID.replace('#', '')}_${index}`,
+                            quoteID: activeEditingQuoteID,
+                            partName: item.name,
+                            partCode: item.code,
+                            price: item.price,
+                            quantity: item.qty,
+                            itemType: item.type,
+                            subtotal: item.subtotal
+                        };
+                        filteredParts.push(newItem);
+                        dbItems.push(newItem);
+                    });
+                    window.saveTable('quotationPartTable', filteredParts);
+
+                    // Save to MySQL DB
+                    fetch('/api/quotes', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            quoteID: activeEditingQuoteID,
+                            customerID: customerRecord.customerID,
+                            variantID: variantID,
+                            mileage: parseInt(rawMileage),
+                            region: region,
+                            totalCost: currentCalculatedTotal,
+                            quoteDate: today,
+                            items: dbItems
+                        })
+                    }).catch(err => console.error("Failed to sync updated quote to DB", err));
+
+                    window.showToast(`Quotation ${activeEditingQuoteID} updated successfully!`, 'success');
+                    activeEditingQuoteID = null; // Clear active editor state
+                }
+            } else {
+                // Generating new quote
+                const newQuoteID = "#Q" + String(Math.floor(Math.random() * 900000) + 100000);
+
+                allQuotes.unshift({
+                    quoteID: newQuoteID,
+                    customerID: customerRecord.customerID,
+                    variantID: variantID,
+                    date: today,
+                    mileage: parseInt(rawMileage),
+                    region: region,
+                    totalCost: currentCalculatedTotal
+                });
 
                 window.saveTable('quotationTable', allQuotes);
 
-                // Clear old items and insert fresh
-                const filteredParts = allQuoteParts.filter(qp => qp.quoteID !== activeEditingQuoteID);
+                // Seed itemized parts mapping table
                 const dbItems = [];
                 currentGeneratedItems.forEach((item, index) => {
                     const newItem = {
-                        quotePartID: `qp_${activeEditingQuoteID.replace('#', '')}_${index}`,
-                        quoteID: activeEditingQuoteID,
+                        quotePartID: `qp_${newQuoteID.replace('#', '')}_${index}`,
+                        quoteID: newQuoteID,
                         partName: item.name,
                         partCode: item.code,
                         price: item.price,
@@ -484,17 +554,17 @@
                         itemType: item.type,
                         subtotal: item.subtotal
                     };
-                    filteredParts.push(newItem);
+                    allQuoteParts.push(newItem);
                     dbItems.push(newItem);
                 });
-                window.saveTable('quotationPartTable', filteredParts);
+                window.saveTable('quotationPartTable', allQuoteParts);
 
                 // Save to MySQL DB
                 fetch('/api/quotes', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        quoteID: activeEditingQuoteID,
+                        quoteID: newQuoteID,
                         customerID: customerRecord.customerID,
                         variantID: variantID,
                         mileage: parseInt(rawMileage),
@@ -503,70 +573,31 @@
                         quoteDate: today,
                         items: dbItems
                     })
-                }).catch(err => console.error("Failed to sync updated quote to DB", err));
+                }).catch(err => console.error("Failed to sync new quote to DB", err));
 
-                alert(`Quotation ${activeEditingQuoteID} updated successfully!`);
-                activeEditingQuoteID = null; // Clear active editor state
+                window.showToast(`Quotation ${newQuoteID} created and saved successfully!`, 'success');
             }
+
+            // Re-render recent quotes panel and clear/reset form
+            renderRecentQuotesPanel();
+            resultSection.style.display = 'none';
+            mileageInput.value = '';
+            modelSel.value = '';
+            variantSel.innerHTML = '<option value="">Select Variant</option>';
+        };
+
+        if (activeEditingQuoteID) {
+            window.showModal({
+                title: "Save Changes",
+                message: `Are you sure you want to save the updated details for Quotation ${activeEditingQuoteID}?`,
+                type: "warning",
+                confirmText: "Save Changes",
+                cancelText: "Discard",
+                onConfirm: executeSave
+            });
         } else {
-            // Generating new quote
-            const newQuoteID = "#Q" + String(Math.floor(Math.random() * 900000) + 100000);
-
-            allQuotes.unshift({
-                quoteID: newQuoteID,
-                customerID: customerRecord.customerID,
-                variantID: variantID,
-                date: today,
-                mileage: parseInt(rawMileage),
-                region: region,
-                totalCost: currentCalculatedTotal
-            });
-
-            window.saveTable('quotationTable', allQuotes);
-
-            // Seed itemized parts mapping table
-            const dbItems = [];
-            currentGeneratedItems.forEach((item, index) => {
-                const newItem = {
-                    quotePartID: `qp_${newQuoteID.replace('#', '')}_${index}`,
-                    quoteID: newQuoteID,
-                    partName: item.name,
-                    partCode: item.code,
-                    price: item.price,
-                    quantity: item.qty,
-                    itemType: item.type,
-                    subtotal: item.subtotal
-                };
-                allQuoteParts.push(newItem);
-                dbItems.push(newItem);
-            });
-            window.saveTable('quotationPartTable', allQuoteParts);
-
-            // Save to MySQL DB
-            fetch('/api/quotes', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    quoteID: newQuoteID,
-                    customerID: customerRecord.customerID,
-                    variantID: variantID,
-                    mileage: parseInt(rawMileage),
-                    region: region,
-                    totalCost: currentCalculatedTotal,
-                    quoteDate: today,
-                    items: dbItems
-                })
-            }).catch(err => console.error("Failed to sync new quote to DB", err));
-
-            alert(`Quotation ${newQuoteID} created and saved successfully!`);
+            executeSave();
         }
-
-        // Re-render recent quotes panel and clear/reset form
-        renderRecentQuotesPanel();
-        resultSection.style.display = 'none';
-        mileageInput.value = '';
-        modelSel.value = '';
-        variantSel.innerHTML = '<option value="">Select Variant</option>';
     }
 
     // ─── RECENT QUOTATIONS DATABASE VIEW PANEL ───────────────────────────────
@@ -686,20 +717,27 @@
         document.querySelectorAll('.delete-q-btn').forEach(btn => {
             btn.addEventListener('click', function () {
                 const qID = this.getAttribute('data-id');
-                if (!confirm(`Are you sure you want to delete quotation record ${qID}?`)) return;
+                window.showModal({
+                    title: "Delete Quotation",
+                    message: `Are you sure you want to delete quotation record ${qID}? This action cannot be undone.`,
+                    type: "warning",
+                    confirmText: "Delete",
+                    cancelText: "Cancel",
+                    onConfirm: () => {
+                        let quotes = window.getTable('quotationTable') || [];
+                        quotes = quotes.filter(q => q.quoteID !== qID);
+                        window.saveTable('quotationTable', quotes);
 
-                let quotes = window.getTable('quotationTable') || [];
-                quotes = quotes.filter(q => q.quoteID !== qID);
-                window.saveTable('quotationTable', quotes);
+                        let quoteParts = window.getTable('quotationPartTable') || [];
+                        quoteParts = quoteParts.filter(qp => qp.quoteID !== qID);
+                        window.saveTable('quotationPartTable', quoteParts);
 
-                let quoteParts = window.getTable('quotationPartTable') || [];
-                quoteParts = quoteParts.filter(qp => qp.quoteID !== qID);
-                window.saveTable('quotationPartTable', quoteParts);
+                        const card = document.getElementById(`card-${qID.replace('#', '')}`);
+                        if (card) card.remove();
 
-                const card = document.getElementById(`card-${qID.replace('#', '')}`);
-                if (card) card.remove();
-
-                alert(`Record ${qID} deleted successfully!`);
+                        window.showToast(`Record ${qID} deleted successfully!`, 'success');
+                    }
+                });
             });
         });
     }

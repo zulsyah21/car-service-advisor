@@ -199,14 +199,30 @@
         // Ensure Admin or Employee can access
         const sessionUser = JSON.parse(localStorage.getItem('currentUser'));
         if (!sessionUser) {
-            alert('Access Denied. Please log in.');
-            window.location.href = 'index.html';
+            window.showModal({
+                title: "Access Denied",
+                message: "Please log in to access this page.",
+                type: "error",
+                confirmText: "Login Page",
+                showCancel: false,
+                onConfirm: () => {
+                    window.location.href = 'signin.html';
+                }
+            });
         } else {
             const employees = getTable('employeeTable');
             const emp = employees.find(e => e.userID === sessionUser.userID);
             if (!emp || (emp.position !== 'Admin' && emp.position !== 'Employee' && emp.position !== 'Administrator')) {
-                alert('Access Denied. Employee or Administrator clearance required.');
-                window.location.href = 'index.html';
+                window.showModal({
+                    title: "Access Denied",
+                    message: "Employee or Administrator clearance required.",
+                    type: "error",
+                    confirmText: "Back to Home",
+                    showCancel: false,
+                    onConfirm: () => {
+                        window.location.href = 'index.html';
+                    }
+                });
             }
         }
 
@@ -272,7 +288,7 @@
             const newMandatory = document.getElementById('edit-part-mandatory').value === 'true';
 
             if (!newName || !newCode) {
-                alert("Part Name and Code cannot be empty.");
+                window.showToast("Part Name and Code cannot be empty.", "error");
                 return;
             }
 
@@ -292,24 +308,32 @@
                 
                 await renderAdminTable();
                 closeEditModal();
-                alert("Part details successfully updated!");
+                window.showToast("Part details successfully updated!", "success");
             } catch (err) {
                 console.error(err);
-                alert("Error: Failed to save changes to database.");
+                window.showToast("Error: Failed to save changes to database.", "error");
             }
         });
 
         async function deletePart(partID, name) {
-            if(confirm('Delete ' + name + ' from the database? This may affect quote calculations forever.')) {
-                try {
-                    const response = await fetch(`/api/parts/${partID}`, { method: 'DELETE' });
-                    if (!response.ok) throw new Error('Failed to delete part');
-                    await renderAdminTable();
-                } catch (err) {
-                    console.error(err);
-                    alert("Error: Failed to delete part.");
+            window.showModal({
+                title: "Delete Part",
+                message: `Are you sure you want to delete ${name} from the database? This may affect quote calculations forever.`,
+                type: "warning",
+                confirmText: "Delete",
+                cancelText: "Cancel",
+                onConfirm: async () => {
+                    try {
+                        const response = await fetch(`/api/parts/${partID}`, { method: 'DELETE' });
+                        if (!response.ok) throw new Error('Failed to delete part');
+                        await renderAdminTable();
+                        window.showToast("Part successfully deleted!", "success");
+                    } catch (err) {
+                        console.error(err);
+                        window.showToast("Error: Failed to delete part.", "error");
+                    }
                 }
-            }
+            });
         }
 
         function openAddModal() {
@@ -331,14 +355,14 @@
             const newMandatory = document.getElementById('add-part-mandatory').value === 'true';
 
             if (!newName || !newCode) {
-                alert("Part Name and Code cannot be empty.");
+                window.showToast("Part Name and Code cannot be empty.", "error");
                 return;
             }
 
             const parts = window.currentLiveParts || [];
             const exists = parts.find(p => p.partName.toLowerCase() === newName.toLowerCase());
             if (exists) {
-                alert("A part with this name already exists!");
+                window.showToast("A part with this name already exists!", "error");
                 return;
             }
 
@@ -362,10 +386,10 @@
                 
                 await renderAdminTable();
                 closeAddModal();
-                alert("New part successfully added!");
+                window.showToast("New part successfully added!", "success");
             } catch (err) {
                 console.error(err);
-                alert("Error: Failed to add new part to database.");
+                window.showToast("Error: Failed to add new part to database.", "error");
             }
         });
 

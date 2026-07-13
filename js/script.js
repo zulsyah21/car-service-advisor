@@ -92,8 +92,16 @@ function initNavbar() {
                 localStorage.removeItem('currentUser');
                 localStorage.removeItem('chatbotHistory');
                 localStorage.removeItem('chatbotPanelOpen');
-                alert('You have logged out successfully. Redirecting...');
-                window.location.href = 'index.html';
+                window.showModal({
+                    title: "Logged Out",
+                    message: "You have logged out successfully. Redirecting you to home page...",
+                    type: "success",
+                    confirmText: "OK",
+                    showCancel: false,
+                    onConfirm: () => {
+                        window.location.href = 'index.html';
+                    }
+                });
             });
         }
     } else {
@@ -2485,3 +2493,127 @@ function toggleKhDetails(e, categoryID) {
 function updatePageLanguage() {
     // Legacy language function placeholder
 }
+
+// ─── PREMIUM MODAL & TOAST JAVASCRIPT SYSTEM ──────────────────────────────────
+(function() {
+    let toastContainer = null;
+    window.showToast = function(message, type = 'success', duration = 3500) {
+        if (!toastContainer) {
+            toastContainer = document.createElement('div');
+            toastContainer.className = 'custom-toast-container';
+            document.body.appendChild(toastContainer);
+        }
+
+        const toast = document.createElement('div');
+        toast.className = `custom-toast ${type}`;
+
+        let iconClass = 'fa-check-circle';
+        if (type === 'error') iconClass = 'fa-exclamation-circle';
+        if (type === 'warning') iconClass = 'fa-exclamation-triangle';
+        if (type === 'info') iconClass = 'fa-info-circle';
+
+        toast.innerHTML = `
+            <i class="fas ${iconClass} custom-toast-icon"></i>
+            <div class="custom-toast-body">${message}</div>
+        `;
+
+        toastContainer.appendChild(toast);
+
+        requestAnimationFrame(() => {
+            toast.classList.add('show');
+        });
+
+        setTimeout(() => {
+            toast.classList.remove('show');
+            toast.addEventListener('transitionend', () => {
+                toast.remove();
+            });
+        }, duration);
+    };
+
+    let modalOverlay = null;
+    window.showModal = function(options = {}) {
+        const {
+            title = 'Notification',
+            message = '',
+            type = 'info', // success, error, warning, info
+            confirmText = 'OK',
+            cancelText = 'Cancel',
+            showCancel = true,
+            onConfirm = null,
+            onCancel = null
+        } = options;
+
+        const isConfirmType = type === 'warning' || type === 'confirm';
+        const finalShowCancel = options.showCancel !== undefined ? options.showCancel : isConfirmType;
+
+        if (!modalOverlay) {
+            modalOverlay = document.createElement('div');
+            modalOverlay.className = 'custom-modal-overlay';
+            document.body.appendChild(modalOverlay);
+        }
+
+        let iconClass = 'fa-info-circle';
+        if (type === 'success') iconClass = 'fa-check-circle';
+        if (type === 'error') iconClass = 'fa-times-circle';
+        if (type === 'warning') iconClass = 'fa-exclamation-triangle';
+
+        modalOverlay.innerHTML = `
+            <div class="custom-modal-card ${type}">
+                <div class="custom-modal-icon-wrapper">
+                    <i class="fas ${iconClass}"></i>
+                </div>
+                <div class="custom-modal-title">${title}</div>
+                <div class="custom-modal-message">${message}</div>
+                <div class="custom-modal-actions">
+                    ${finalShowCancel ? `<button class="custom-modal-btn custom-modal-btn-cancel">${cancelText}</button>` : ''}
+                    <button class="custom-modal-btn custom-modal-btn-confirm ${type}">${confirmText}</button>
+                </div>
+            </div>
+        `;
+
+        const confirmBtn = modalOverlay.querySelector('.custom-modal-btn-confirm');
+        const cancelBtn = modalOverlay.querySelector('.custom-modal-btn-cancel');
+
+        const closeModal = () => {
+            modalOverlay.classList.remove('show');
+            document.removeEventListener('keydown', handleKeyDown);
+        };
+
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape' && finalShowCancel) {
+                closeModal();
+                if (onCancel) onCancel();
+            } else if (e.key === 'Enter') {
+                closeModal();
+                if (onConfirm) onConfirm();
+            }
+        };
+
+        confirmBtn.addEventListener('click', () => {
+            closeModal();
+            if (onConfirm) onConfirm();
+        });
+
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', () => {
+                closeModal();
+                if (onCancel) onCancel();
+            });
+        }
+
+        modalOverlay.onclick = (e) => {
+            if (e.target === modalOverlay && finalShowCancel) {
+                closeModal();
+                if (onCancel) onCancel();
+            }
+        };
+
+        requestAnimationFrame(() => {
+            modalOverlay.classList.add('show');
+        });
+
+        document.addEventListener('keydown', handleKeyDown);
+    };
+})();
+
