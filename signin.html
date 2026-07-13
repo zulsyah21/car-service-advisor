@@ -7,6 +7,8 @@
     <title>Sign In - Service Advisor</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Identity Services (real OAuth 2.0) -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
         .auth-container {
             display: flex;
@@ -108,11 +110,10 @@
         <div class="auth-card">
             <h2>Welcome Back</h2>
 
-            <!-- Google Sign-In -->
-            <button class="google-btn" id="google-signin-btn">
-                <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" width="20">
-                Sign In with Google
-            </button>
+            <!-- Real Google Sign-In (rendered by Google Identity Services) -->
+            <div id="google-btn-container"
+                 data-text="signin_with"
+                 style="display:flex; justify-content:center; margin-bottom:1.5rem; min-height:44px;"></div>
 
             <div class="divider">
                 <span>OR</span>

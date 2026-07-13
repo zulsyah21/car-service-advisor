@@ -6,6 +6,9 @@ const rateLimit = require('express-rate-limit');
 const mysql = require('mysql2/promise');
 const bcrypt = require('bcrypt');
 const { GoogleGenerativeAI } = require("@google/generative-ai");
+const { OAuth2Client } = require('google-auth-library');
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const SALT_ROUNDS = 12; // bcrypt cost factor — higher = slower = more secure
 
@@ -122,11 +125,86 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date() });
 });
 
-// Config endpoint to fetch environment variables (key is never sent to browser)
+// Config endpoint to fetch environment variables (keys are never sent to browser)
 app.get('/api/config', (req, res) => {
   res.json({
-    hasGeminiKey: !!process.env.GEMINI_API_KEY
+    hasGeminiKey: !!process.env.GEMINI_API_KEY,
+    googleClientId: process.env.GOOGLE_CLIENT_ID || ''
   });
+});
+
+// ─── GOOGLE OAUTH ENDPOINT ────────────────────────────────────────────────────
+// Verifies a real Google ID token from Google Identity Services (GIS)
+// and logs in (or auto-registers) the user.
+app.post('/api/users/google-auth', async (req, res) => {
+  const { credential } = req.body;
+  if (!credential) {
+    return res.status(400).json({ error: 'Google credential token is required' });
+  }
+  if (!process.env.GOOGLE_CLIENT_ID) {
+    return res.status(500).json({ error: 'Google OAuth is not configured on this server.' });
+  }
+
+  try {
+    // 1. Verify the ID token with Google's servers
+    const ticket = await googleClient.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    const email    = (payload.email || '').toLowerCase().trim();
+    const fullName = payload.name || email.split('@')[0];
+    const picture  = payload.picture || '';
+
+    if (!email) {
+      return res.status(400).json({ error: 'Could not extract email from Google token' });
+    }
+
+    // 2. Look up or create user in the database
+    const [existing] = await pool.query(
+      'SELECT userID, username, fullName, email, phoneNum, role FROM users WHERE email = ?',
+      [email]
+    );
+
+    if (existing.length > 0) {
+      // Existing user — return their profile
+      return res.json(existing[0]);
+    }
+
+    // 3. New user — auto-register as Customer
+    const connection = await pool.getConnection();
+    try {
+      await connection.beginTransaction();
+
+      const userID     = 'u' + Date.now().toString(36);
+      const customerID = 'c' + Date.now().toString(36);
+      const username   = email.split('@')[0].replace(/[^a-z0-9]/gi, '').toLowerCase() || 'user' + Date.now().toString(36);
+      // Google accounts have no password — store an empty bcrypt hash placeholder
+      const emptyHash  = await bcrypt.hash('', 12);
+
+      await connection.query(
+        'INSERT INTO users (userID, username, fullName, email, password, phoneNum, role) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [userID, username, fullName, email, emptyHash, '', 'Customer']
+      );
+      await connection.query(
+        'INSERT INTO customers (customerID, userID) VALUES (?, ?)',
+        [customerID, userID]
+      );
+
+      await connection.commit();
+
+      const newUser = { userID, username, fullName, email, phoneNum: '', role: 'Customer' };
+      return res.json(newUser);
+    } catch (dbErr) {
+      await connection.rollback();
+      throw dbErr;
+    } finally {
+      connection.release();
+    }
+  } catch (err) {
+    console.error('Google auth error:', err.message);
+    return res.status(401).json({ error: 'Invalid or expired Google token. Please try again.' });
+  }
 });
 
 // Chatbot endpoint to interact with Gemini API
