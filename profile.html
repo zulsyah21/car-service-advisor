@@ -162,6 +162,20 @@
                     return;
                 }
 
+                window.showModal({
+                    title: "Confirm Changes",
+                    message: "Are you sure you want to save the changes to your profile?",
+                    type: "info",
+                    confirmText: "Save",
+                    cancelText: "Cancel",
+                    showCancel: true,
+                    onConfirm: () => {
+                        saveProfileData(fullName, email, username, phone, password);
+                    }
+                });
+            });
+
+            function saveProfileData(fullName, email, username, phone, password) {
                 let users = [];
                 try { users = JSON.parse(localStorage.getItem('userTable')) || []; } catch (_) {}
 
@@ -209,7 +223,7 @@
                 } else {
                     showToast('Error saving profile changes. User not found.', 'error');
                 }
-            });
+            }
 
             // Run check and loader on startup
             checkAuth();

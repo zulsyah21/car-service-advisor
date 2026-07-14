@@ -192,6 +192,10 @@
 
             /* Toast helper — matches google-signin.js style */
             function showToast(message, type) {
+                if (typeof window.showToast === 'function') {
+                    window.showToast(message, type);
+                    return;
+                }
                 const old = document.getElementById('google-signin-toast');
                 if (old) old.remove();
 

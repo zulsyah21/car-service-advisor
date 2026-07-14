@@ -7,6 +7,43 @@
     <title>Get Quotation - Service Advisor</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* ── Print Styles ── */
+        @media print {
+            body * { visibility: hidden; }
+            #print-area, #print-area * { visibility: visible; }
+            #print-area {
+                position: fixed;
+                top: 0; left: 0;
+                width: 100%;
+                padding: 2rem;
+                font-family: 'Segoe UI', Arial, sans-serif;
+                color: #111;
+                background: white;
+            }
+            .no-print { display: none !important; }
+        }
+
+        #print-area {
+            display: none;
+        }
+
+        /* Print receipt layout */
+        .print-header {
+            text-align: center;
+            border-bottom: 2px solid #333;
+            padding-bottom: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .print-header h2 { font-size: 1.4rem; margin: 0; }
+        .print-header p  { font-size: 0.85rem; color: #555; margin: 4px 0 0; }
+        .print-meta { display: flex; justify-content: space-between; margin-bottom: 1.5rem; font-size: 0.88rem; color: #333; }
+        .print-table { width: 100%; border-collapse: collapse; margin-bottom: 1rem; }
+        .print-table th { background: #222; color: white; padding: 8px 10px; text-align: left; font-size: 0.82rem; }
+        .print-table td { padding: 7px 10px; border-bottom: 1px solid #ddd; font-size: 0.82rem; color: #222; }
+        .print-total { text-align: right; font-size: 1.1rem; font-weight: bold; color: #e31837; border-top: 2px solid #333; padding-top: 0.75rem; }
+        .print-footer { text-align: center; margin-top: 2rem; font-size: 0.78rem; color: #888; }
+    </style>
 </head>
 
 <body>
@@ -50,7 +87,7 @@
                 <label>Region</label>
                 <select id="region-select" class="form-control">
                     <option value="Peninsular">Peninsular Malaysia</option>
-                    <option value="EM">East Malaysia (Sabah & Sarawak)</option>
+                    <option value="EM">East Malaysia (Sabah &amp; Sarawak)</option>
                 </select>
             </div>
 
@@ -88,11 +125,14 @@
 
                 <div style="margin-top:2rem; display:flex; gap:1rem;">
                     <button class="btn-primary" id="save-generated-quote-btn"><i class="fas fa-save"></i> Save Quote</button>
-                    <button class="btn-secondary"><i class="fas fa-print"></i> Print</button>
+                    <button class="btn-secondary" id="print-quote-btn" onclick="printCurrentQuote()"><i class="fas fa-print"></i> Print / Save PDF</button>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Hidden Print Area -->
+    <div id="print-area"></div>
 
     <!-- Chatbot (Included everywhere) -->
     <div class="chatbot-toggle">
@@ -115,6 +155,73 @@
     <script src="js/db-init.js"></script>
     <script src="js/script.js"></script>
     <script src="js/quotes-logic.js"></script>
+
+    <script>
+        function printCurrentQuote() {
+            // Gather quote data from the visible table
+            const rows = document.querySelectorAll('#quote-table tbody tr');
+            const total = document.getElementById('grand-total').textContent;
+            const model = document.getElementById('model-select').options[document.getElementById('model-select').selectedIndex]?.text || '';
+            const variant = document.getElementById('variant-select').options[document.getElementById('variant-select').selectedIndex]?.text || '';
+            const mileage = document.getElementById('mileage-input').value || '';
+            const region = document.getElementById('region-select').options[document.getElementById('region-select').selectedIndex]?.text || '';
+            const today = new Date().toLocaleDateString('en-MY', { year: 'numeric', month: 'long', day: 'numeric' });
+
+            let rowsHTML = '';
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                if (cells.length >= 5) {
+                    rowsHTML += `<tr>
+                        <td>${cells[0].textContent}</td>
+                        <td>${cells[1].textContent}</td>
+                        <td>${cells[2].textContent}</td>
+                        <td>${cells[3].textContent}</td>
+                        <td>${cells[4].textContent}</td>
+                    </tr>`;
+                }
+            });
+
+            const printArea = document.getElementById('print-area');
+            printArea.innerHTML = `
+                <div class="print-header">
+                    <h2>Service Quotation</h2>
+                    <p>Web-Based Automated Car Service Advisor (WACSA)</p>
+                </div>
+                <div class="print-meta">
+                    <div>
+                        <strong>Vehicle:</strong> ${model} — ${variant}<br>
+                        <strong>Mileage:</strong> ${parseInt(mileage).toLocaleString()} km<br>
+                        <strong>Region:</strong> ${region}
+                    </div>
+                    <div style="text-align:right;">
+                        <strong>Date:</strong> ${today}<br>
+                        <strong>Quote ID:</strong> #${Date.now().toString(36).toUpperCase()}
+                    </div>
+                </div>
+                <table class="print-table">
+                    <thead>
+                        <tr>
+                            <th>Part / Service</th>
+                            <th>Code</th>
+                            <th>Unit Price</th>
+                            <th>Type</th>
+                            <th>Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rowsHTML}</tbody>
+                </table>
+                <div class="print-total">Grand Total: ${total}</div>
+                <div class="print-footer">
+                    Thank you for using WACSA — Authorised Perodua Service Advisor System<br>
+                    Printed on ${today}
+                </div>
+            `;
+
+            printArea.style.display = 'block';
+            window.print();
+            printArea.style.display = 'none';
+        }
+    </script>
 </body>
 
 </html>
