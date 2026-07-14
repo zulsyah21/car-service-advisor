@@ -22,9 +22,14 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 INSERT IGNORE INTO users (userID, username, fullName, email, password, phoneNum, role) VALUES
-('u1','izzuls','Izzul Syahmi','izzuls@gmail.com','123','0123456789','Admin'),
-('u2','ali','Ali','ali@gmail.com','111','0198765432','Customer'),
-('u3','ahmad','Ahmad','ahmad@gmail.com','123','0171234567','Employee');
+('u1','izzuls','Izzul Syahmi','izzuls@gmail.com','$2b$12$MPTj706AUWJIZ7S5ihnRQe.MN/XE4ko9m7J7k4FtSpdp39Jd8FFbS','0123456789','Admin'),
+('u2','ali','Ali','ali@gmail.com','$2b$12$KhstieMzvL8nKt2VsBNIXuH7dKm.m3ryBZDN7vG6q4oq/idy5hl2y','0198765432','Customer'),
+('u3','ahmad','Ahmad','ahmad@gmail.com','$2b$12$MPTj706AUWJIZ7S5ihnRQe.MN/XE4ko9m7J7k4FtSpdp39Jd8FFbS','0171234567','Employee');
+
+-- Force-update seed user passwords to bcrypt hashes (fixes existing rows seeded with plain text)
+UPDATE users SET password = '$2b$12$MPTj706AUWJIZ7S5ihnRQe.MN/XE4ko9m7J7k4FtSpdp39Jd8FFbS' WHERE userID = 'u1';
+UPDATE users SET password = '$2b$12$KhstieMzvL8nKt2VsBNIXuH7dKm.m3ryBZDN7vG6q4oq/idy5hl2y' WHERE userID = 'u2';
+UPDATE users SET password = '$2b$12$MPTj706AUWJIZ7S5ihnRQe.MN/XE4ko9m7J7k4FtSpdp39Jd8FFbS' WHERE userID = 'u3';
 
 -- 2. EMPLOYEES
 CREATE TABLE IF NOT EXISTS employees (
