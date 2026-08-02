@@ -166,11 +166,83 @@
         }
         /* Responsive hero for mobile */
         @media (max-width: 768px) {
-            .hero-container { height: 60vh; }
-            .hero-bg { object-position: center center; }
+            .hero-container { height: 100svh; min-height: 100vh; }
+            .hero-bg { object-position: center center !important; }
+            .hero-content { padding-top: 80px; }
         }
         @media (max-width: 480px) {
-            .hero-container { height: 55vh; }
+            .hero-container { height: 100svh; min-height: 100vh; }
+            .hero-bg { object-position: center center !important; }
+        }
+
+        /* ─── MOBILE NAV ─── */
+        #mobile-menu-btn {
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 5px;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            z-index: 9999;
+            background: transparent;
+            border: none;
+            padding: 4px;
+        }
+        #mobile-menu-btn span {
+            display: block;
+            width: 24px;
+            height: 2px;
+            background: #fff;
+            border-radius: 2px;
+            transition: all 0.3s ease;
+            transform-origin: center;
+        }
+        #mobile-menu-btn.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+        #mobile-menu-btn.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+        #mobile-menu-btn.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+        #mobile-nav-drawer {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(5,5,5,0.98);
+            z-index: 9000;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 2rem;
+            backdrop-filter: blur(16px);
+            animation: drawerFadeIn 0.3s ease;
+        }
+        #mobile-nav-drawer.open { display: flex; }
+        @keyframes drawerFadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        #mobile-nav-drawer a {
+            color: rgba(255,255,255,0.7);
+            text-decoration: none;
+            font-size: 1.6rem;
+            font-weight: 800;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            font-family: 'Montserrat', sans-serif;
+            transition: color 0.2s;
+        }
+        #mobile-nav-drawer a:hover,
+        #mobile-nav-drawer a.active { color: #e31837; }
+        #mobile-nav-drawer .mobile-nav-divider {
+            width: 40px;
+            height: 2px;
+            background: #e31837;
+        }
+        @media (max-width: 768px) {
+            #mobile-menu-btn { display: flex; }
         }
 
         /* ─── BACK TO TOP BUTTON ─── */
@@ -432,7 +504,7 @@
         <img alt="Perodua Logo" class="w-auto h-12 hover:scale-105 transition-transform duration-300" src="images/perodua_logo.png">
     </a>
 
-    <!-- Navigation Links -->
+    <!-- Navigation Links (desktop) -->
     <nav class="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center space-x-10" id="main-nav-links">
         <a class="active" href="index.html">Home</a>
         <a href="quotes.html">Quotes</a>
@@ -441,10 +513,27 @@
     </nav>
 
     <!-- Right Side Actions / Auth area -->
-    <div class="flex items-center space-x-6 nav-auth" id="main-nav-auth">
-        <a href="signin.html">Sign In</a>
+    <div class="flex items-center space-x-4 nav-auth" id="main-nav-auth">
+        <a href="signin.html" class="hidden md:inline">Sign In</a>
+        <!-- Hamburger Button (mobile only) -->
+        <button id="mobile-menu-btn" aria-label="Toggle navigation" aria-expanded="false">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
     </div>
 </header>
+
+<!-- Mobile Full-Screen Nav Drawer -->
+<div id="mobile-nav-drawer" role="dialog" aria-modal="true" aria-label="Mobile navigation">
+    <div class="mobile-nav-divider"></div>
+    <a href="index.html" class="active">Home</a>
+    <a href="quotes.html">Quotes</a>
+    <a href="knowledge.html">Knowledge Hub</a>
+    <a href="locate.html">Locate</a>
+    <div class="mobile-nav-divider"></div>
+    <a href="signin.html" id="mobile-signin-link" style="font-size:1rem; color: #e31837; letter-spacing:0.2em;">Sign In</a>
+</div>
 
 
 <!-- ══════════════════════════════
@@ -453,7 +542,7 @@
  ═══════════════════════════════ -->
 <main class="hero-container relative h-screen w-full overflow-hidden flex flex-col justify-center items-center" id="hero">
     <!-- Background Car Image -->
-    <img alt="Red Perodua Myvi Rear View" class="hero-bg absolute top-0 left-0 w-full h-full object-cover z-1" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDEK1lFf3Y4lcCHSPGzXtf-KaUVzamyvzjd6Re-WYbS21bWAJPRwffaR6o77UeHihqeY269YY9Z-eAECkxo96vkuGzW7WHC70tgguM-7lHjV1mq-_4GoZc8ypTZ9JbY1aQ23_fO5anrIx8Nwe01H0s7CY-m6xOOoB3HuckCexMm4e-XWvygCo8JWISvPEFe4yo_gNHYw6nRu-ezv5EaaDc7Q4jAyfDwwhgqoudJRcuwizXh_yhAL2ocTm3k08TefWqyQ5ta5aLqCw=s0">
+    <img alt="Red Perodua Myvi Rear View" class="hero-bg absolute top-0 left-0 w-full h-full object-cover z-1" style="object-position: center center;" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDEK1lFf3Y4lcCHSPGzXtf-KaUVzamyvzjd6Re-WYbS21bWAJPRwffaR6o77UeHihqeY269YY9Z-eAECkxo96vkuGzW7WHC70tgguM-7lHjV1mq-_4GoZc8ypTZ9JbY1aQ23_fO5anrIx8Nwe01H0s7CY-m6xOOoB3HuckCexMm4e-XWvygCo8JWISvPEFe4yo_gNHYw6nRu-ezv5EaaDc7Q4jAyfDwwhgqoudJRcuwizXh_yhAL2ocTm3k08TefWqyQ5ta5aLqCw=s0">
     
     <!-- Dark Vignette Overlay -->
     <div class="overlay-vignette"></div>
@@ -978,6 +1067,58 @@
     btn.addEventListener('click', function() {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     });
+})();
+</script>
+
+<script>
+/* ─── MOBILE HAMBURGER MENU ─── */
+(function () {
+    const menuBtn   = document.getElementById('mobile-menu-btn');
+    const drawer    = document.getElementById('mobile-nav-drawer');
+    if (!menuBtn || !drawer) return;
+
+    function openMenu() {
+        drawer.classList.add('open');
+        menuBtn.classList.add('open');
+        menuBtn.setAttribute('aria-expanded', 'true');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeMenu() {
+        drawer.classList.remove('open');
+        menuBtn.classList.remove('open');
+        menuBtn.setAttribute('aria-expanded', 'false');
+        document.body.style.overflow = '';
+    }
+
+    menuBtn.addEventListener('click', function () {
+        if (drawer.classList.contains('open')) {
+            closeMenu();
+        } else {
+            openMenu();
+        }
+    });
+
+    // Close on Escape key
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && drawer.classList.contains('open')) {
+            closeMenu();
+        }
+    });
+
+    // Close when a nav link inside drawer is clicked
+    drawer.querySelectorAll('a').forEach(function (link) {
+        link.addEventListener('click', closeMenu);
+    });
+
+    // Update "Sign In" link in drawer if user is already logged in
+    const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+    const mobileSignIn = document.getElementById('mobile-signin-link');
+    if (mobileSignIn && currentUser) {
+        mobileSignIn.textContent = currentUser.name || 'Profile';
+        mobileSignIn.href = 'profile.html';
+        mobileSignIn.style.color = '#e31837';
+    }
 })();
 </script>
 

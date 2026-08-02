@@ -289,6 +289,21 @@
         return ['m7', 'm8', 'm9', 'm10', 'm11'].includes(modelID);
     }
 
+    // ─── MANDATORY CLASSIFICATION ─────────────────────────────────────────────
+    // Returns true if the item is a core/mandatory service item,
+    // false if it is a scheduled/recommended replacement at this interval.
+    function isMandatoryItem(item) {
+        const mandatoryCodes = [
+            'OIL-FS-0W20', 'OIL-SS', 'FLT-OIL-GEN', 'FLT-OIL',
+            'GSK-ENG-GEN', 'SVC-LABOUR', 'SVC-LAB', 'SVC-SST'
+        ];
+        if (mandatoryCodes.some(c => (item.code || '').startsWith(c))) return true;
+
+        const mandatoryKeywords = ['engine oil', 'oil filter', 'drain plug gasket', 'labour charges', 'sst'];
+        const nameLower = (item.name || '').toLowerCase();
+        return mandatoryKeywords.some(k => nameLower.includes(k));
+    }
+
     // ─── QUOTATION GENERATOR CALCULATION ─────────────────────────────────────
     async function generateQuote() {
         const modelID = modelSel.value;
@@ -383,6 +398,10 @@
             }
 
             const subtotal = price; 
+            const mandatory = isMandatoryItem({ name: itemName, code: itemCode, type: item.type });
+            const mandatoryBadge = mandatory
+                ? `<span class="badge-mandatory">Required</span>`
+                : `<span class="badge-recommended">Recommended</span>`;
             
             const tr = document.createElement('tr');
             tr.innerHTML = `
@@ -390,6 +409,7 @@
                 <td style="font-family: monospace; color: var(--text-muted);">${itemCode}</td>
                 <td style="text-align: right;">RM ${price.toFixed(2)}</td>
                 <td style="text-align: center;">${(item.type === 'Part' && item.qty > 0) ? item.qty : '-'}</td>
+                <td style="text-align: center;">${mandatoryBadge}</td>
                 <td style="text-align: right; font-weight: 700; color: var(--primary-accent);">RM ${subtotal.toFixed(2)}</td>
             `;
             quoteTableBody.appendChild(tr);

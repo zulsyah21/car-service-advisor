@@ -939,6 +939,31 @@ body {
     background: #2a2a2a;
 }
 
+/* Mandatory / Recommended badge pills in quote table */
+.badge-mandatory {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    background: rgba(227, 24, 55, 0.12);
+    color: #ff4d6d;
+    border: 1px solid rgba(227, 24, 55, 0.35);
+}
+
+.badge-recommended {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    background: rgba(255, 178, 44, 0.12);
+    color: #e6a817;
+    border: 1px solid rgba(255, 178, 44, 0.35);
+}
+
 /* Responsive Handling */
 @media (max-width: 900px) {
     body {

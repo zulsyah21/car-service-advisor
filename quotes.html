@@ -43,6 +43,10 @@
         .print-table td { padding: 7px 10px; border-bottom: 1px solid #ddd; font-size: 0.82rem; color: #222; }
         .print-total { text-align: right; font-size: 1.1rem; font-weight: bold; color: #e31837; border-top: 2px solid #333; padding-top: 0.75rem; }
         .print-footer { text-align: center; margin-top: 2rem; font-size: 0.78rem; color: #888; }
+        .badge-mandatory { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: 700; background: #ffe5e9; color: #c0003c; border: 1px solid #f5b8c4; }
+        .badge-recommended { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: 700; background: #fff7e0; color: #a06000; border: 1px solid #f5d87a; }
+        .print-legend { font-size: 0.76rem; color: #555; margin-top: 0.5rem; }
+        .print-legend span { margin-right: 12px; }
     </style>
 </head>
 
@@ -110,6 +114,7 @@
                             <th>Code</th>
                             <th>Price</th>
                             <th>Type</th>
+                            <th>Mandatory</th>
                             <th>Total</th>
                         </tr>
                     </thead>
@@ -170,13 +175,20 @@
             let rowsHTML = '';
             rows.forEach(row => {
                 const cells = row.querySelectorAll('td');
-                if (cells.length >= 5) {
+                if (cells.length >= 6) {
+                    const mandatoryCell = cells[4].querySelector('.badge-mandatory, .badge-recommended');
+                    const mandatoryText = mandatoryCell ? mandatoryCell.textContent.trim() : cells[4].textContent.trim();
+                    const isMandatory = mandatoryText === 'Required';
+                    const badgeStyle = isMandatory
+                        ? 'display:inline-block;padding:2px 8px;border-radius:12px;font-size:0.72rem;font-weight:700;background:#ffe5e9;color:#c0003c;border:1px solid #f5b8c4;'
+                        : 'display:inline-block;padding:2px 8px;border-radius:12px;font-size:0.72rem;font-weight:700;background:#fff7e0;color:#a06000;border:1px solid #f5d87a;';
                     rowsHTML += `<tr>
                         <td>${cells[0].textContent}</td>
                         <td>${cells[1].textContent}</td>
                         <td>${cells[2].textContent}</td>
                         <td>${cells[3].textContent}</td>
-                        <td>${cells[4].textContent}</td>
+                        <td><span style="${badgeStyle}">${mandatoryText}</span></td>
+                        <td>${cells[5].textContent}</td>
                     </tr>`;
                 }
             });
@@ -205,11 +217,16 @@
                             <th>Code</th>
                             <th>Unit Price</th>
                             <th>Type</th>
+                            <th>Mandatory</th>
                             <th>Subtotal</th>
                         </tr>
                     </thead>
                     <tbody>${rowsHTML}</tbody>
                 </table>
+                <div class="print-legend">
+                    <span><span style="display:inline-block;padding:1px 6px;border-radius:10px;background:#ffe5e9;color:#c0003c;border:1px solid #f5b8c4;font-size:0.7rem;font-weight:700;">Required</span> Must be done at this service interval</span>
+                    <span><span style="display:inline-block;padding:1px 6px;border-radius:10px;background:#fff7e0;color:#a06000;border:1px solid #f5d87a;font-size:0.7rem;font-weight:700;">Recommended</span> Scheduled replacement at this mileage</span>
+                </div>
                 <div class="print-total">Grand Total: ${total}</div>
                 <div class="print-footer">
                     Thank you for using WACSA — Authorised Perodua Service Advisor System<br>
