@@ -210,8 +210,9 @@ app.post('/api/users/google-auth', async (req, res) => {
 // Chatbot endpoint to interact with Gemini API
 app.post('/api/chatbot', async (req, res) => {
   const { message, history } = req.body;
+
   if (!message) {
-    return res.status(400).json({ error: 'Message is required' });
+    return res.status(400).json({ error: 'Message is required.' });
   }
 
   const apiKey = process.env.GEMINI_API_KEY;
@@ -219,66 +220,73 @@ app.post('/api/chatbot', async (req, res) => {
     return res.status(500).json({ error: 'Gemini API key is not configured on the server.' });
   }
 
-  // 1. Fetch live context from database
+  // 1. Fetch live context from MySQL database
   let dbContext = '';
   try {
     const [models] = await pool.query('SELECT modelID, brand, modelName FROM car_models');
     const [parts] = await pool.query('SELECT partID, partName, partCode, price, isMandatory FROM service_parts');
-    
+
     dbContext = `
 Here is the live database context of our workshop:
 1. Supported Perodua Car Models:
-${models.map(m => `- ${m.brand} ${m.modelName} (ID: ${m.modelID})`).join('\n')}
-
+${models.map(m => `- ${m.brand} ${m.modelName}`).join('\n')}
 2. Live Parts Inventory & Standard Pricing:
-${parts.map(p => `- ${p.partName} (${p.partCode}): RM ${parseFloat(p.price).toFixed(2)} [${p.isMandatory ? 'Mandatory' : 'Optional'}]`).join('\n')}
-`;
+${parts.map(p => `- ${p.partName} (${p.partCode}): RM ${parseFloat(p.price).toFixed(2)} [${p.isMandatory ? 'Mandatory' : 'Optional'}]`).join('\n')}`;
   } catch (dbErr) {
-    console.warn("Could not load DB context for chatbot, using default:", dbErr);
+    console.error('DB context fetch failed:', dbErr);
+    dbContext = '(Live pricing/inventory data is temporarily unavailable — do not state specific workshop prices; advise the user to check with the workshop directly for current pricing.)';
   }
 
-  try {
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({
-      model: 'gemini-2.0-flash',
-      systemInstruction: `You are CarCare AI Advisor, a professional and comprehensive automotive expert. You provide reliable, detailed, and professional answers to ALL inquiries regarding automotive knowledge, car specifications, engine stats, model histories, troubleshooting, diagnostics, and maintenance milestones.
+  // 2. Initialize Gemini with system prompt
+  const genAI = new GoogleGenerativeAI(apiKey);
+  const model = genAI.getGenerativeModel({
+    model: 'gemini-2.0-flash',
+    systemInstruction: `You are CarCare AI Advisor, a knowledgeable and professional automotive expert assistant for a car workshop.
 
-Guidelines:
-1. SPECIFICATION & GENERAL KNOWLEDGE: You are highly knowledgeable about car specs, engines, transmissions, torque, horsepower, fuel efficiency, safety systems (e.g., Perodua A.S.A., ABS, airbags), dimensions, and general automotive history. Answer any general car queries using your internal knowledge.
-2. LIVE WORKSHOP CONTEXT: When users ask about parts, costs, or services available at our workshop, refer to the database context below. Standard prices are in RM (Ringgit Malaysia). Always quote these exact database prices if the part is in our inventory. If a part/service is not in our database, clearly state it's a general estimate and not in our standard inventory.
-3. INTERACTIVE DIAGNOSTICS: If a user describes a symptom (e.g., squealing brakes, check engine light), use a logical diagnostic troubleshooting flowchart. Ask clarifying questions (such as mileage, symptoms, exact car model) when necessary.
-4. SAFETY WARNINGS: For critical safety issues (e.g., brake failure symptoms, engine overheating), always include prominent bold safety warnings.
-5. FORMATTING: Use clean Markdown with structured headings, lists, and bold text to ensure high readability.
+## Your Scope
+You can help with:
+1. **Workshop-specific queries** (use the Live Workshop Database Context below as ground truth — do not guess prices, part codes, or supported models):
+   - Service pricing, part costs, mandatory vs optional parts
+   - Which car models this workshop supports
+   - Maintenance schedules and service milestones (10k, 20k, 40k, 100k KM, etc.)
+
+2. **General automotive knowledge** (use your own expertise, NOT limited to the database):
+   - Car specifications (engine, transmission, dimensions, fuel consumption, trims)
+   - Comparisons between car models or brands
+   - General maintenance advice, symptoms/troubleshooting, how car systems work
+   - Driving tips, fuel efficiency, tyre care, general car buying advice
+   - Any other automotive-related topic, even about brands/models not in the workshop's database
+
+When a question is about general automotive knowledge (e.g. "what are the specs of the Perodua Ativa"), answer it directly and helpfully using your own knowledge. Only pull from the Live Workshop Database Context when the question is specifically about this workshop's services, pricing, or supported models — don't force every answer back to workshop topics.
+
+## Out of Scope
+If a user asks about something with NO connection to automotive topics (e.g. cooking recipes, politics, homework unrelated to cars, general chit-chat unrelated to vehicles), politely decline and steer back:
+"I'm CarCare AI Advisor — I can help with anything car-related, from specs and maintenance tips to our workshop's services and pricing. What would you like to know about your vehicle?"
+
+Do NOT use this redirect for automotive questions just because they aren't in the database — only use it for genuinely non-automotive questions.
+
+## Tone
+Be professional, concise, and helpful. When discussing workshop pricing, cite exact figures from the Live Workshop Database Context. When discussing general automotive knowledge, be clear that this is general information and actual specs/pricing may vary by region/trim/year.
 
 Live Workshop Database Context:
 ${dbContext}`
-    });
+  });
 
-    // Map history to SDK-expected format
+  // 3. Map conversation history & send message
+  try {
     const mappedHistory = (history || []).map(h => ({
       role: h.role === 'user' ? 'user' : 'model',
-      parts: [{ text: h.text }]
+      parts: [{ text: h.text || h.content || '' }],
     }));
 
-    const chat = model.startChat({
-      history: mappedHistory
-    });
-
+    const chat = model.startChat({ history: mappedHistory });
     const result = await chat.sendMessage(message);
     const response = await result.response;
-    const reply = response.text();
 
-    res.json({ reply });
-  } catch (error) {
-    console.error('Full API Error:', {
-      status: error.status,
-      message: error.message,
-      details: error.response?.data || error
-    });
-    // Send a generic message — never expose raw error.message to the frontend
-    res.status(500).json({
-      error: 'AI service is temporarily unavailable. Please try again in a moment.'
-    });
+    res.json({ reply: response.text() });
+  } catch (apiErr) {
+    console.error('Gemini API error:', apiErr);
+    res.status(502).json({ error: 'The chatbot is temporarily unavailable. Please try again shortly.' });
   }
 });
 
