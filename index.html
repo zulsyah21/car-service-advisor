@@ -515,13 +515,14 @@
     <!-- Right Side Actions / Auth area -->
     <div class="flex items-center space-x-4 nav-auth" id="main-nav-auth">
         <a href="signin.html" class="hidden md:inline">Sign In</a>
-        <!-- Hamburger Button (mobile only) -->
-        <button id="mobile-menu-btn" aria-label="Toggle navigation" aria-expanded="false">
-            <span></span>
-            <span></span>
-            <span></span>
-        </button>
     </div>
+
+    <!-- Hamburger Button (mobile only) — kept OUTSIDE #main-nav-auth so script.js doesn't wipe it -->
+    <button id="mobile-menu-btn" aria-label="Toggle navigation" aria-expanded="false">
+        <span></span>
+        <span></span>
+        <span></span>
+    </button>
 </header>
 
 <!-- Mobile Full-Screen Nav Drawer -->

@@ -1195,10 +1195,11 @@
         </nav>
         <div class="nav-auth" id="main-nav-auth" style="display:flex;align-items:center;gap:1rem;">
             <a href="signin.html" id="desktop-signin-link">Sign In</a>
-            <button id="mobile-menu-btn" aria-label="Toggle navigation" aria-expanded="false">
-                <span></span><span></span><span></span>
-            </button>
         </div>
+        <!-- Hamburger Button — outside #main-nav-auth so script.js doesn't wipe it -->
+        <button id="mobile-menu-btn" aria-label="Toggle navigation" aria-expanded="false">
+            <span></span><span></span><span></span>
+        </button>
     </header>
 
     <!-- Mobile Nav Drawer -->
