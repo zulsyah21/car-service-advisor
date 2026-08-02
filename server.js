@@ -74,6 +74,11 @@ app.use('/api/', apiLimiter);
 app.use('/api/users/login', authLimiter);
 app.use('/api/users/register', authLimiter);
 
+// Server status & config check endpoint
+app.get('/api/config', (req, res) => {
+  res.json({ hasGeminiKey: !!process.env.GEMINI_API_KEY });
+});
+
 // ─── DATABASE CONNECTION ──────────────────────────────────────────────────────
 // Supports local .env, Heroku JawsDB (JAWSDB_URL), and generic DATABASE_URL
 let pool;

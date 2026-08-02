@@ -208,18 +208,18 @@ function initChatbot() {
     // - Any real server (local or cloud) → use relative paths so it works everywhere
     const API_BASE = (window.location.protocol === 'file:') ? 'http://localhost:3000' : '';
 
-    // Config and Gemini active states
-    let isGeminiConfigured = false;
+    // Config and Gemini active states (default true so API is always attempted)
+    let isGeminiConfigured = true;
 
     async function fetchConfig() {
         try {
             const res = await fetch(`${API_BASE}/api/config`);
-            const data = await res.json();
-            if (data && data.hasGeminiKey) {
-                isGeminiConfigured = true;
+            if (res.ok) {
+                const data = await res.json();
+                isGeminiConfigured = (data && data.hasGeminiKey !== false);
             }
         } catch (e) {
-            console.warn('Could not fetch server config, falling back to local simulation.', e);
+            console.warn('Could not fetch server config, proceeding with Gemini API.', e);
         }
     }
     fetchConfig();
@@ -1515,7 +1515,7 @@ BMW vehicles utilize **Condition Based Service (CBS)**, which monitors wear on k
         if (!isGeminiConfigured) return null;
         try {
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 4000);
+            const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout for AI generation
 
             const response = await fetch(`${API_BASE}/api/chatbot`, {
                 method: 'POST',
@@ -1532,7 +1532,7 @@ BMW vehicles utilize **Condition Based Service (CBS)**, which monitors wear on k
             clearTimeout(timeoutId);
 
             if (!response.ok) {
-                const errorData = await response.json();
+                const errorData = await response.json().catch(() => ({}));
                 throw new Error(errorData.error || 'Server error');
             }
 
@@ -1540,21 +1540,7 @@ BMW vehicles utilize **Condition Based Service (CBS)**, which monitors wear on k
             return data.reply;
         } catch (e) {
             console.error("Gemini API Error:", e.message);
-
-            // Show a generic error — never expose raw e.message in the chat
-            const errorMsgDiv = document.createElement('div');
-            errorMsgDiv.className = 'msg bot-msg system-error-msg';
-            errorMsgDiv.style.color = '#f44336';
-            errorMsgDiv.style.backgroundColor = '#ffebee';
-            errorMsgDiv.style.borderLeft = '4px solid #f44336';
-            errorMsgDiv.style.padding = '8px';
-            errorMsgDiv.style.margin = '8px 0';
-            errorMsgDiv.style.borderRadius = '4px';
-            errorMsgDiv.innerHTML = `<strong>AI Advisor Offline.</strong><br><small>Using offline response mode...</small>`;
-            chatBody.appendChild(errorMsgDiv);
-            chatBody.scrollTop = chatBody.scrollHeight;
-
-            return null; // Triggers local fallback — error div is NOT added to history
+            return null; // Triggers local fallback smoothly
         }
     }
 
