@@ -253,7 +253,7 @@
                 }
 
                 /* Success - Create new account via API */
-                const newUserID = 'u' + Date.now().toString(36);
+                const newUserID = 'u' + Date.now().toString(36).slice(-8); // max 9 chars → fits VARCHAR(10)
 
                 const newUser = {
                     userID: newUserID,
@@ -273,8 +273,9 @@
                     });
 
                     if (response.ok) {
-                        // Auto-login the user
-                        localStorage.setItem('currentUser', JSON.stringify(newUser));
+                        // Auto-login: store user WITHOUT password in localStorage
+                        const { password: _, ...safeUser } = newUser;
+                        localStorage.setItem('currentUser', JSON.stringify(safeUser));
                         showToast(`Welcome! Account successfully created for ${fullName}! 🎉`, 'success');
                         setTimeout(() => { window.location.href = 'index.html'; }, 1500);
                     } else {
@@ -283,28 +284,8 @@
                     }
                 } catch (err) {
                     console.error('Registration error:', err);
-                    // Fallback to localStorage if server is unreachable
-                    let users = [];
-                    try { users = JSON.parse(localStorage.getItem('userTable')) || []; } catch (_) {}
-
-                    const duplicateUsername = users.find(u => (u.username || '').toLowerCase() === username.toLowerCase());
-                    if (duplicateUsername) {
-                        showToast('Username is already taken. Please try another.', 'error');
-                        return;
-                    }
-
-                    users.push(newUser);
-                    localStorage.setItem('userTable', JSON.stringify(users));
-
-                    const newCustomerID = 'c' + Date.now().toString(36);
-                    let customers = [];
-                    try { customers = JSON.parse(localStorage.getItem('customerTable')) || []; } catch (_) {}
-                    customers.push({ customerID: newCustomerID, userID: newUserID });
-                    localStorage.setItem('customerTable', JSON.stringify(customers));
-
-                    localStorage.setItem('currentUser', JSON.stringify(newUser));
-                    showToast(`Welcome! Account successfully created for ${fullName}! 🎉`, 'success');
-                    setTimeout(() => { window.location.href = 'index.html'; }, 1500);
+                    // Server is unreachable — show a clear error instead of silently using localStorage
+                    showToast('Cannot connect to the server. Please make sure the server is running (npm start), then try again.', 'error');
                 }
             });
 
