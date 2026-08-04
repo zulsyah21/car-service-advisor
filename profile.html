@@ -44,8 +44,8 @@
                     <input type="tel" id="edit-phone" class="form-control" required/>
                 </div>
                 <div class="form-group">
-                    <label>Password</label>
-                    <input type="password" id="edit-password" class="form-control" required/>
+                    <label>Password <span style="font-weight:400; opacity:0.6;">(leave blank to keep current)</span></label>
+                    <input type="password" id="edit-password" class="form-control" placeholder="Enter new password (optional)"/>
                 </div>
                 <button type="submit" class="btn-primary" style="width: 100%; margin-top: 1rem;"><i class="fas fa-save"></i> Save Changes</button>
             </form>
@@ -138,7 +138,9 @@
                 document.getElementById('edit-email').value = currentUser.email || '';
                 document.getElementById('edit-username').value = currentUser.username || '';
                 document.getElementById('edit-phone').value = currentUser.phoneNum || '';
-                document.getElementById('edit-password').value = currentUser.password || '';
+                // Do NOT pre-fill password from session for security;
+                // leave blank so user only provides a new password if they want to change it
+                document.getElementById('edit-password').value = '';
             }
 
             document.getElementById('edit-profile-form').addEventListener('submit', function (e) {
@@ -152,12 +154,13 @@
                 const phone    = document.getElementById('edit-phone').value.trim();
                 const password = document.getElementById('edit-password').value;
 
-                if (!fullName || !email || !username || !phone || !password) {
+                if (!fullName || !email || !username || !phone) {
                     showToast('Please fill in all fields.', 'error');
                     return;
                 }
 
-                if (password.length < 6) {
+                // Only validate password length if user typed a new one
+                if (password && password.length < 6) {
                     showToast('Password must be at least 6 characters long.', 'error');
                     return;
                 }
@@ -175,13 +178,47 @@
                 });
             });
 
-            function saveProfileData(fullName, email, username, phone, password) {
+            async function saveProfileData(fullName, email, username, phone, password) {
+                const userID = currentUser.userID;
+
+                // ── 1. Try to save via server API ──────────────────────────
+                try {
+                    const body = { fullName, email, username, phoneNum: phone };
+                    if (password) body.password = password;   // only send if changed
+
+                    const response = await fetch('/api/users/' + encodeURIComponent(userID), {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(body)
+                    });
+
+                    if (response.ok) {
+                        const updatedUser = await response.json();
+                        // Merge back into session (server returns safe user without password hash)
+                        currentUser = { ...currentUser, ...updatedUser };
+                        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+
+                        if (typeof initNavbar === 'function') initNavbar();
+                        showToast('Changes saved successfully! 🎉', 'success');
+                        return;
+                    }
+
+                    // Server returned an error (e.g. duplicate username/email)
+                    const errData = await response.json();
+                    showToast(errData.error || 'Error saving profile changes.', 'error');
+                    return;
+
+                } catch (_) {
+                    // Server unreachable — fall through to localStorage fallback
+                }
+
+                // ── 2. Fallback: localStorage-only update ──────────────────
                 let users = [];
                 try { users = JSON.parse(localStorage.getItem('userTable')) || []; } catch (_) {}
 
                 // Check for duplicate username (excluding ourselves)
                 const duplicateUsername = users.find(u =>
-                    u.userID !== currentUser.userID &&
+                    u.userID !== userID &&
                     (u.username || '').toLowerCase() === username.toLowerCase()
                 );
                 if (duplicateUsername) {
@@ -191,7 +228,7 @@
 
                 // Check for duplicate email (excluding ourselves)
                 const duplicateEmail = users.find(u =>
-                    u.userID !== currentUser.userID &&
+                    u.userID !== userID &&
                     (u.email || '').toLowerCase() === email.toLowerCase()
                 );
                 if (duplicateEmail) {
@@ -199,30 +236,25 @@
                     return;
                 }
 
-                // Update users list
-                const userIdx = users.findIndex(u => u.userID === currentUser.userID);
+                // Update users list if user exists in local table
+                const userIdx = users.findIndex(u => u.userID === userID);
                 if (userIdx !== -1) {
                     users[userIdx].fullName = fullName;
-                    users[userIdx].email = email;
+                    users[userIdx].email    = email;
                     users[userIdx].username = username;
                     users[userIdx].phoneNum = phone;
-                    users[userIdx].password = password;
+                    if (password) users[userIdx].password = password;
 
                     localStorage.setItem('userTable', JSON.stringify(users));
-
-                    // Update local storage session object
-                    currentUser = users[userIdx];
-                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
-
-                    // Refresh Navbar dropdown name/role instantly
-                    if (typeof initNavbar === 'function') {
-                        initNavbar();
-                    }
-
-                    showToast('Changes saved successfully! 🎉', 'success');
+                    currentUser = { ...currentUser, ...users[userIdx] };
                 } else {
-                    showToast('Error saving profile changes. User not found.', 'error');
+                    // User not in localStorage (server-registered) — just update session object
+                    currentUser = { ...currentUser, fullName, email, username, phoneNum: phone };
                 }
+
+                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                if (typeof initNavbar === 'function') initNavbar();
+                showToast('Changes saved (offline). 🎉', 'success');
             }
 
             // Run check and loader on startup

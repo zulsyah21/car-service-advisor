@@ -496,6 +496,61 @@ app.post('/api/users/register', async (req, res) => {
   }
 });
 
+// Update a user's profile
+app.put('/api/users/:id', async (req, res) => {
+  const { id } = req.params;
+  const { fullName, email, username, phoneNum, password } = req.body;
+  if (!fullName || !email || !username) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+  try {
+    // Check for duplicate username (excluding this user)
+    const [dupUsername] = await pool.query(
+      'SELECT userID FROM users WHERE username = ? AND userID != ?',
+      [username, id]
+    );
+    if (dupUsername.length > 0) {
+      return res.status(409).json({ error: 'Username is already taken. Please try another.' });
+    }
+
+    // Check for duplicate email (excluding this user)
+    const [dupEmail] = await pool.query(
+      'SELECT userID FROM users WHERE email = ? AND userID != ?',
+      [email, id]
+    );
+    if (dupEmail.length > 0) {
+      return res.status(409).json({ error: 'Email address is already in use by another account.' });
+    }
+
+    if (password) {
+      // Hash the new password
+      const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+      await pool.query(
+        'UPDATE users SET fullName = ?, email = ?, username = ?, phoneNum = ?, password = ? WHERE userID = ?',
+        [fullName, email, username, phoneNum || '', hashedPassword, id]
+      );
+    } else {
+      await pool.query(
+        'UPDATE users SET fullName = ?, email = ?, username = ?, phoneNum = ? WHERE userID = ?',
+        [fullName, email, username, phoneNum || '', id]
+      );
+    }
+
+    // Return the updated user (without password)
+    const [rows] = await pool.query(
+      'SELECT userID, username, fullName, email, phoneNum, role FROM users WHERE userID = ?',
+      [id]
+    );
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    res.json(rows[0]);
+  } catch (err) {
+    console.error('Failed to update user:', err);
+    res.status(500).json({ error: 'Failed to update user profile' });
+  }
+});
+
 // Delete a user
 app.delete('/api/users/:id', async (req, res) => {
   const { id } = req.params;

@@ -282,6 +282,7 @@
             document.getElementById('add-employee-modal').style.display = 'none';
         }
 
+
         document.getElementById('save-employee-btn').addEventListener('click', async () => {
             const name = document.getElementById('add-emp-name').value.trim();
             const username = document.getElementById('add-emp-username').value.trim();
@@ -291,7 +292,7 @@
             const role = document.getElementById('add-emp-role').value;
 
             if (!name || !username || !email || !password) {
-                alert("Please fill in all required fields (Name, Username, Email, Password).");
+                window.showToast('Please fill in all required fields (Name, Username, Email, Password).', 'error');
                 return;
             }
 
@@ -313,16 +314,16 @@
                 });
 
                 if (response.ok) {
-                    alert("Account registered successfully!");
+                    window.showToast('Account registered successfully! 🎉', 'success');
                     closeAddEmployeeModal();
                     await renderUsersTable();
                 } else {
                     const err = await response.json();
-                    alert(err.error || "Registration failed.");
+                    window.showToast(err.error || 'Registration failed.', 'error');
                 }
             } catch (err) {
                 console.error(err);
-                alert("Error: Failed to register user in database.");
+                window.showToast('Error: Failed to register user in database.', 'error');
             }
             
             document.getElementById('add-emp-name').value = '';

@@ -2384,10 +2384,6 @@ function closeKbEditModal() {
 // Save Changes back to database
 async function saveKbBlockChanges() {
     if (!activeEditingBlockID) return;
-    
-    if (!confirm('Are you sure you want to save these updated service details?')) {
-        return;
-    }
 
     const title = document.getElementById('edit-kb-title').value.trim();
     const desc = document.getElementById('edit-kb-desc').value.trim();
@@ -2402,40 +2398,50 @@ async function saveKbBlockChanges() {
     const warnings = warningsText ? warningsText.split('\n').map(w => w.trim()).filter(w => w.length > 0) : [];
 
     if (!title || !desc) {
-        alert("Block Title and Short Description cannot be empty.");
+        window.showToast('Block Title and Short Description cannot be empty.', 'error');
         return;
     }
 
-    try {
-        const response = await fetch(`/api/knowledge/${activeEditingBlockID}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                blockTitle: title,
-                description: desc,
-                whyItMatters: why,
-                maintenanceTip: tip,
-                didYouKnow: know,
-                costEstimate: cost,
-                difficultyLevel: diff,
-                urgency: urgency,
-                warningSigns: warnings
-            })
-        });
+    window.showModal({
+        title: 'Save Service Details',
+        message: 'Are you sure you want to save these updated service details?',
+        type: 'info',
+        confirmText: 'Save',
+        cancelText: 'Cancel',
+        showCancel: true,
+        onConfirm: async () => {
+            try {
+                const response = await fetch(`/api/knowledge/${activeEditingBlockID}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        blockTitle: title,
+                        description: desc,
+                        whyItMatters: why,
+                        maintenanceTip: tip,
+                        didYouKnow: know,
+                        costEstimate: cost,
+                        difficultyLevel: diff,
+                        urgency: urgency,
+                        warningSigns: warnings
+                    })
+                });
 
-        if (!response.ok) throw new Error('Failed to update knowledge block');
+                if (!response.ok) throw new Error('Failed to update knowledge block');
 
-        // Refresh display
-        await renderKnowledgeHub();
+                // Refresh display
+                await renderKnowledgeHub();
 
-        // Close modal
-        closeKbEditModal();
+                // Close modal
+                closeKbEditModal();
 
-        alert("Service details successfully updated!");
-    } catch (err) {
-        console.error(err);
-        alert("Error: Failed to save changes to the database.");
-    }
+                window.showToast('Service details successfully updated! ✅', 'success');
+            } catch (err) {
+                console.error(err);
+                window.showToast('Error: Failed to save changes to the database.', 'error');
+            }
+        }
+    });
 }
 
 function scrollToKhSection(categoryID) {
