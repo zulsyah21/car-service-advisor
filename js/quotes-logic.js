@@ -476,19 +476,23 @@
             return;
         }
 
-        const customers = window.getTable('customerTable') || [];
-        const customerRecord = customers.find(c => c.userID === currentUser.userID);
+        const employees = window.getTable('employeeTable') || [];
+        const isStaff = currentUser.role === 'Admin' || currentUser.role === 'Employee' || employees.some(e => e.userID === currentUser.userID);
 
-        if (!customerRecord) {
+        if (isStaff) {
             window.showModal({
                 title: "Restricted Access",
-                message: "You must be registered as a Customer to save quotes. Staff and Admin accounts are restricted to read-only views.",
+                message: "Staff and Admin accounts are restricted to read-only views. Only Customer accounts can save quotes.",
                 type: "error",
                 confirmText: "OK",
                 showCancel: false
             });
             return;
         }
+
+        const customers = window.getTable('customerTable') || [];
+        const customerRecord = customers.find(c => c.userID === currentUser.userID);
+        const activeCustomerID = customerRecord ? customerRecord.customerID : (currentUser.customerID || currentUser.userID);
 
         const allQuotes = window.getTable('quotationTable') || [];
         const allQuoteParts = window.getTable('quotationPartTable') || [];
@@ -533,7 +537,7 @@
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
                                 quoteID: activeEditingQuoteID,
-                                customerID: customerRecord.customerID,
+                                customerID: activeCustomerID,
                                 variantID: variantID,
                                 mileage: parseInt(rawMileage),
                                 region: region,
@@ -581,7 +585,7 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             quoteID: newQuoteID,
-                            customerID: customerRecord.customerID,
+                            customerID: activeCustomerID,
                             variantID: variantID,
                             mileage: parseInt(rawMileage),
                             region: region,
@@ -603,7 +607,7 @@
                 // Persist to localStorage only after DB confirms success
                 allQuotes.unshift({
                     quoteID: newQuoteID,
-                    customerID: customerRecord.customerID,
+                    customerID: activeCustomerID,
                     variantID: variantID,
                     date: today,
                     mileage: parseInt(rawMileage),

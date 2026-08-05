@@ -38,23 +38,16 @@
     let showDelete     = false;
     let isStaff        = false;
 
-    if (empRecord) {
+    if (empRecord || currentUser.role === 'Admin' || currentUser.role === 'Employee') {
         filteredQuotes = allQuotes;
         isStaff        = true;
-        showDelete     = (empRecord.position === 'Admin');
+        showDelete     = (empRecord ? empRecord.position === 'Admin' : currentUser.role === 'Admin');
         if (subtitle) subtitle.textContent = 'All customer quotations — Staff View';
-    } else if (cusRecord) {
-        filteredQuotes = allQuotes.filter(q => q.customerID === cusRecord.customerID);
+    } else {
+        const custId = cusRecord ? cusRecord.customerID : currentUser.userID;
+        filteredQuotes = allQuotes.filter(q => q.customerID === custId || q.customerID === currentUser.userID);
         showDelete     = true;
         if (subtitle) subtitle.textContent = `${filteredQuotes.length} saved estimate${filteredQuotes.length !== 1 ? 's' : ''}`;
-    } else {
-        historyList.innerHTML = `
-            <div class="empty-state">
-                <div class="empty-state-icon">🚫</div>
-                <h3>Access restricted</h3>
-                <p>Only registered customers can view saved quotations from this page.</p>
-            </div>`;
-        return;
     }
 
     // ─── RENDER ───────────────────────────────────────────────────────────────
@@ -66,9 +59,9 @@
             historyList.innerHTML = isEmpty
                 ? `<div class="empty-state">
                         <div class="empty-state-icon">🧾</div>
-                        <h3>No quotations yet</h3>
-                        <p>You haven't saved any service estimates yet. Generate your first quote in seconds!</p>
-                        <a href="quotes.html" class="btn-cta"><i class="fas fa-file-invoice-dollar"></i> Get Your Quote Now</a>
+                        <h3>You don't have any quotes yet</h3>
+                        <p>Get yours right now!</p>
+                        <a href="quotes.html" class="btn-cta"><i class="fas fa-file-invoice-dollar"></i> Get Yours Right Now</a>
                    </div>`
                 : `<div style="text-align:center; padding:3rem; color:#aaa;">
                         <i class="fas fa-search" style="font-size:2rem; margin-bottom:1rem; display:block;"></i>
