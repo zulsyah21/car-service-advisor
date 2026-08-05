@@ -618,12 +618,8 @@
                 window.showToast(`Quotation ${newQuoteID} created and saved successfully!`, 'success');
             }
 
-            // Re-render recent quotes panel and clear/reset form
-            renderRecentQuotesPanel();
-            resultSection.style.display = 'none';
-            mileageInput.value = '';
-            modelSel.value = '';
-            variantSel.innerHTML = '<option value="">Select Variant</option>';
+            // After a successful save, go to Quote History
+            window.location.href = 'quote-history.html';
         };
 
         if (activeEditingQuoteID) {
@@ -841,7 +837,6 @@
             saveQuoteBtn.addEventListener('click', saveQuotation);
         }
 
-        renderRecentQuotesPanel();
     });
 
 })();

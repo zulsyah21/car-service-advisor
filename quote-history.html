@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quote History - Service Advisor</title>
+    <meta name="description" content="View your saved service quotation history for Perodua vehicles.">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* ── Print Styles ── */
+        @media print {
+            body * { visibility: hidden; }
+            #print-area, #print-area * { visibility: visible; }
+            #print-area {
+                position: fixed;
+                top: 0; left: 0;
+                width: 100%;
+                padding: 2rem;
+                font-family: 'Segoe UI', Arial, sans-serif;
+                color: #111;
+                background: white;
+            }
+            .no-print { display: none !important; }
+        }
+        #print-area { display: none; }
+
+        /* Print receipt layout */
+        .print-header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 1rem; margin-bottom: 1.5rem; }
+        .print-header h2 { font-size: 1.4rem; margin: 0; }
+        .print-header p  { font-size: 0.85rem; color: #555; margin: 4px 0 0; }
+        .print-meta { display: flex; justify-content: space-between; margin-bottom: 1.5rem; font-size: 0.88rem; color: #333; }
+        .print-table { width: 100%; border-collapse: collapse; margin-bottom: 1rem; }
+        .print-table th { background: #222; color: white; padding: 8px 10px; text-align: left; font-size: 0.82rem; }
+        .print-table td { padding: 7px 10px; border-bottom: 1px solid #ddd; font-size: 0.82rem; color: #222; }
+        .print-total { text-align: right; font-size: 1.1rem; font-weight: bold; color: #e31837; border-top: 2px solid #333; padding-top: 0.75rem; }
+        .print-footer { text-align: center; margin-top: 2rem; font-size: 0.78rem; color: #888; }
+        .badge-mandatory { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: 700; background: #ffe5e9; color: #c0003c; border: 1px solid #f5b8c4; }
+        .badge-recommended { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: 700; background: #fff7e0; color: #a06000; border: 1px solid #f5d87a; }
+
+        /* ── Search bar ── */
+        .history-search-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 1.5rem;
+            background: #f6f7fb;
+            border: 1px solid #e2e5ec;
+            border-radius: 8px;
+            padding: 10px 16px;
+        }
+        .history-search-bar input {
+            border: none;
+            background: transparent;
+            outline: none;
+            font-size: 0.95rem;
+            flex: 1;
+            color: #222;
+        }
+        .history-search-bar i { color: #aaa; }
+
+        /* ── Quote cards ── */
+        .saved-quote-card {
+            background: #ffffff;
+            border: 1px solid #eaeaea;
+            border-radius: 10px;
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.04);
+            flex-wrap: wrap;
+            gap: 1rem;
+            transition: box-shadow 0.2s, transform 0.2s;
+        }
+        .saved-quote-card:hover {
+            box-shadow: 0 8px 28px rgba(0,0,0,0.09);
+            transform: translateY(-2px);
+        }
+
+        /* ── Empty state ── */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: linear-gradient(135deg, rgba(0,160,70,0.04) 0%, rgba(227,24,55,0.04) 100%);
+            border: 2px dashed rgba(0,160,70,0.25);
+            border-radius: 16px;
+            margin-top: 1rem;
+        }
+        .empty-state-icon { font-size: 4rem; margin-bottom: 1rem; opacity: 0.3; }
+        .empty-state h3 { font-size: 1.3rem; font-weight: 700; color: #222; margin-bottom: 0.5rem; }
+        .empty-state p { font-size: 0.93rem; color: #888; max-width: 360px; margin: 0 auto 1.75rem; line-height: 1.6; }
+        .btn-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 13px 30px;
+            background: var(--primary-green, #00a046);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.96rem;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            letter-spacing: 0.3px;
+            box-shadow: 0 4px 16px rgba(0,160,70,0.3);
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+        .btn-cta:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 22px rgba(0,160,70,0.42);
+        }
+
+        /* ── Page header strip ── */
+        .page-hero {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .page-hero-left h2 {
+            font-size: 1.7rem;
+            font-weight: 800;
+            color: #111;
+            margin: 0 0 4px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .page-hero-left h2 i { color: var(--primary-green, #00a046); }
+        .page-hero-left p { font-size: 0.9rem; color: #888; margin: 0; }
+    </style>
+</head>
+
+<body>
+
+    <header class="navbar" id="main-navbar">
+        <a href="index.html" class="nav-brand" id="nav-brand-link">
+            <img src="images/perodua_logo.png" alt="Perodua Logo">
+        </a>
+        <nav class="nav-links" id="main-nav-links">
+            <a href="index.html">Home</a>
+            <a href="quotes.html">Quotes</a>
+            <a href="knowledge.html">Knowledge Hub</a>
+            <a href="locate.html">Locate</a>
+        </nav>
+        <div class="nav-auth" id="main-nav-auth">
+            <a href="signin.html">Sign In</a>
+        </div>
+    </header>
+
+    <div class="main-content">
+        <div class="page-container">
+
+            <div class="page-hero">
+                <div class="page-hero-left">
+                    <h2><i class="fas fa-history"></i> Quote History</h2>
+                    <p id="history-subtitle">Your saved service cost estimates</p>
+                </div>
+                <a href="quotes.html" class="btn-cta no-print" id="new-quote-hero-btn">
+                    <i class="fas fa-plus"></i> New Quote
+                </a>
+            </div>
+
+            <!-- Search bar (visible only when there are quotes) -->
+            <div class="history-search-bar no-print" id="history-search-wrap" style="display:none;">
+                <i class="fas fa-search"></i>
+                <input type="text" id="history-search-input" placeholder="Search by model, quote ID, or date…">
+            </div>
+
+            <!-- Quote cards rendered here by JS -->
+            <div id="history-list" style="display:flex; flex-direction:column; gap:14px;"></div>
+
+        </div>
+    </div>
+
+    <!-- Hidden Print Area -->
+    <div id="print-area"></div>
+
+    <!-- Chatbot -->
+    <div class="chatbot-toggle">
+        <i class="fas fa-comment-dots"></i>
+    </div>
+    <div class="chatbot-container">
+        <div class="chatbot-header">
+            <span>24/7 AI CHATBOT</span>
+            <i class="fas fa-times close-chat" style="cursor:pointer; opacity:0.7;"></i>
+        </div>
+        <div class="chatbot-body" id="chat-body">
+            <div class="msg bot-msg">Hello, how can I help you?</div>
+        </div>
+        <div class="chatbot-footer">
+            <input type="text" id="chat-input-text" placeholder="Type your message">
+            <button id="chat-send-btn"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
+
+    <script src="js/db-init.js"></script>
+    <script src="js/script.js"></script>
+    <script src="js/quote-history.js"></script>
+
+</body>
+
+</html>

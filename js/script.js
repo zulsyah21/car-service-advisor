@@ -77,7 +77,7 @@ function initNavbar() {
                     <span class="mgmt-dropdown-btn"><i class="fas fa-user-circle"></i> ${currentUser.fullName || currentUser.username} <i class="fas fa-caret-down" style="font-size: 0.75rem; margin-left: 3px;"></i></span>
                     <div class="mgmt-dropdown-content">
                         <a href="profile.html"><i class="fas fa-user"></i> My Profile</a>
-                        <a href="quotes.html"><i class="fas fa-file-invoice-dollar"></i> My Estimates</a>
+                        <a href="quote-history.html"><i class="fas fa-history"></i> Quote History</a>
                         <a href="#" id="logout-link"><i class="fas fa-sign-out-alt"></i> Sign Out</a>
                     </div>
                 </div>`;
