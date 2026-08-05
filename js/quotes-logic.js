@@ -650,7 +650,6 @@
         if (oldPanel) oldPanel.remove();
 
         const allQuotes = window.getTable('quotationTable') || [];
-        if (allQuotes.length === 0) return; // No quotes to display
 
         let filteredQuotes = [];
         let showDelete = false;
@@ -671,7 +670,55 @@
             return; // Guest users don't see any dashboard
         }
 
-        if (filteredQuotes.length === 0) return;
+        if (filteredQuotes.length === 0) {
+            // Show empty state only for customers (not guests or staff with no data)
+            if (!cusRecord) return;
+
+            const panelDiv = document.createElement('div');
+            panelDiv.id = 'past-quotes-section';
+            panelDiv.style.cssText = 'margin-top: 3.5rem; border-top: 2px solid #eaeaea; padding-top: 2rem;';
+            panelDiv.innerHTML = `
+                <h3 style="font-size: 1.5rem; font-weight: 700; color: #111; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 8px;">
+                    <i class="fas fa-history" style="color: var(--primary-green);"></i> My Saved Estimates &amp; Maintenance Records
+                </h3>
+                <div style="
+                    text-align: center;
+                    padding: 3rem 2rem;
+                    background: linear-gradient(135deg, rgba(0,160,70,0.04) 0%, rgba(227,24,55,0.04) 100%);
+                    border: 2px dashed rgba(0,160,70,0.25);
+                    border-radius: 16px;
+                ">
+                    <div style="font-size: 3.5rem; margin-bottom: 1rem; opacity: 0.35;">🧾</div>
+                    <div style="font-size: 1.2rem; font-weight: 700; color: #222; margin-bottom: 0.5rem;">No quotations yet</div>
+                    <div style="font-size: 0.92rem; color: #888; margin-bottom: 1.75rem; max-width: 340px; margin-left: auto; margin-right: auto;">
+                        You haven't saved any service estimates yet. Fill in your car details above and get yours now!
+                    </div>
+                    <button
+                        onclick="document.getElementById('model-select').focus(); document.querySelector('.page-container').scrollIntoView({ behavior: 'smooth', block: 'start' });"
+                        style="
+                            display: inline-flex; align-items: center; gap: 8px;
+                            padding: 12px 28px;
+                            background: var(--primary-green, #00a046);
+                            color: #fff;
+                            border: none;
+                            border-radius: 8px;
+                            font-size: 0.95rem;
+                            font-weight: 700;
+                            cursor: pointer;
+                            letter-spacing: 0.3px;
+                            box-shadow: 0 4px 14px rgba(0,160,70,0.3);
+                            transition: transform 0.15s, box-shadow 0.15s;
+                        "
+                        onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(0,160,70,0.4)';"
+                        onmouseout="this.style.transform=''; this.style.boxShadow='0 4px 14px rgba(0,160,70,0.3)';"
+                    >
+                        <i class="fas fa-file-invoice-dollar"></i> Get Your Quote Now
+                    </button>
+                </div>
+            `;
+            pageContainer.appendChild(panelDiv);
+            return;
+        }
 
         const models = window.getTable('carModelTable') || [];
         const variants = window.getTable('carVariantTable') || [];
