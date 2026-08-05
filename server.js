@@ -225,59 +225,70 @@ app.post('/api/chatbot', async (req, res) => {
     return res.status(500).json({ error: 'Gemini API key is not configured on the server.' });
   }
 
-  // 1. Fetch live context from MySQL database
-  let dbContext = '';
-  try {
-    const [models] = await pool.query('SELECT modelID, brand, modelName FROM car_models');
-    const [parts] = await pool.query('SELECT partID, partName, partCode, price, isMandatory FROM service_parts');
+  // 1. Determine if the query is workshop/pricing/Perodua-specific vs general automotive
+  const isWorkshopQuery = /(?:price|pricing|cost|quote|quotation|service|book|booking|oil change|brake pad|spark plug|filter|labour|labor|Perodua|Myvi|Axia|Bezza|Alza|Ativa|Aruz|Viva|Kancil|Kelisa|Kenari|Kembara|Nautica|Traz|maintenance|repair|workshop|part)/i.test(message);
 
-    dbContext = `
-Here is the live database context of our workshop:
-1. Supported Perodua Car Models:
-${models.map(m => `- ${m.brand} ${m.modelName}`).join('\n')}
-2. Live Parts Inventory & Standard Pricing:
-${parts.map(p => `- ${p.partName} (${p.partCode}): RM ${parseFloat(p.price).toFixed(2)} [${p.isMandatory ? 'Mandatory' : 'Optional'}]`).join('\n')}`;
-  } catch (dbErr) {
-    console.error('DB context fetch failed:', dbErr);
-    dbContext = '(Live pricing/inventory data is temporarily unavailable — do not state specific workshop prices; advise the user to check with the workshop directly for current pricing.)';
+  let systemInstruction = '';
+  let generationConfig = { temperature: 0.7 };
+
+  if (isWorkshopQuery) {
+    // Workshop Mode — fetch live data from MySQL
+    generationConfig = { temperature: 0.2 };
+    let modelList = '';
+    let partsList = '';
+
+    try {
+      const [models] = await pool.query('SELECT modelID, brand, modelName FROM car_models');
+      const [parts] = await pool.query('SELECT partID, partName, partCode, price, isMandatory FROM service_parts');
+
+      modelList = models.map(m => `${m.brand} ${m.modelName}`).join(', ');
+      partsList = parts.map(p => `- ${p.partName} (${p.partCode}): RM ${parseFloat(p.price).toFixed(2)} [${p.isMandatory ? 'Mandatory' : 'Optional'}]`).join('\n');
+    } catch (dbErr) {
+      console.error('DB context fetch failed:', dbErr);
+      partsList = '(Live pricing/inventory data is temporarily unavailable — advise the user to check with the workshop directly.)';
+    }
+
+    systemInstruction = `You are CarCare AI Advisor, an expert automotive service advisor specialising in Perodua vehicles at our authorised workshop. You have access to live workshop data.
+
+Supported Workshop Models:
+${modelList}
+
+Live Parts Inventory & Pricing:
+${partsList}
+
+Rules:
+- Use this data to answer questions about service costs, part availability, and recommended maintenance schedules for Perodua cars.
+- Only quote exact prices from the live pricing list above. If a part or price is not listed, say you don't have that specific price on record.
+- Keep answers concise, helpful, and professional.
+
+Examples:
+User: "How much for an oil change on Myvi?"
+Assistant: "For a Perodua Myvi, standard engine oil (Semi-Synthetic) is RM 89.00, Fully-Synthetic is RM 159.00, an oil filter is RM 18.00, and standard labour fee is RM 50.00."`;
+
+  } else {
+    // General Automotive Mode — no workshop data bias
+    systemInstruction = `You are an expert automotive knowledge assistant with deep knowledge of all vehicle makes, models, engineering, and maintenance practices.
+
+Rules:
+- Answer general car questions (e.g. "How does a turbocharger work?", "What causes brake fade?", "Why is my car pulling to the left?") clearly, educationally, and accurately.
+- Do NOT mention Perodua, workshop pricing, or local service packages unless the user explicitly asks about them.
+- Provide general diagnostic steps that apply to any car make or model.
+- Keep answers clear, friendly, and jargon-free.
+
+Examples:
+User: "What is a timing belt?"
+Assistant: "A timing belt synchronises the rotation of the engine's crankshaft and camshaft so that the engine's valves open and close at the proper times during each cylinder's intake and exhaust strokes. Most manufacturers recommend replacing it every 60,000 to 100,000 km to prevent severe engine damage."`;
   }
 
-  // 2. Initialize Gemini with system prompt
+  // 2. Initialize Gemini model with specific mode prompt & temperature config
   const genAI = new GoogleGenerativeAI(apiKey);
   const model = genAI.getGenerativeModel({
     model: 'gemini-2.0-flash',
-    systemInstruction: `You are CarCare AI Advisor, a knowledgeable and professional automotive expert assistant for a car workshop.
-
-## Your Scope
-You can help with:
-1. **Workshop-specific queries** (use the Live Workshop Database Context below as ground truth — do not guess prices, part codes, or supported models):
-   - Service pricing, part costs, mandatory vs optional parts
-   - Which car models this workshop supports
-   - Maintenance schedules and service milestones (10k, 20k, 40k, 100k KM, etc.)
-
-2. **General automotive knowledge** (use your own expertise, NOT limited to the database):
-   - Car specifications (engine, transmission, dimensions, fuel consumption, trims)
-   - Comparisons between car models or brands
-   - General maintenance advice, symptoms/troubleshooting, how car systems work
-   - Driving tips, fuel efficiency, tyre care, general car buying advice
-   - Any other automotive-related topic, even about brands/models not in the workshop's database
-
-When a question is about general automotive knowledge (e.g. "what are the specs of the Perodua Ativa"), answer it directly and helpfully using your own knowledge. Only pull from the Live Workshop Database Context when the question is specifically about this workshop's services, pricing, or supported models — don't force every answer back to workshop topics.
-
-## Out of Scope
-If a user asks about something with NO connection to automotive topics (e.g. cooking recipes, politics, homework unrelated to cars, general chit-chat unrelated to vehicles), politely decline and steer back:
-"I'm CarCare AI Advisor — I can help with anything car-related, from specs and maintenance tips to our workshop's services and pricing. What would you like to know about your vehicle?"
-
-Do NOT use this redirect for automotive questions just because they aren't in the database — only use it for genuinely non-automotive questions.
-
-## Tone
-Be professional, concise, and helpful. When discussing workshop pricing, cite exact figures from the Live Workshop Database Context. When discussing general automotive knowledge, be clear that this is general information and actual specs/pricing may vary by region/trim/year.
-
-Live Workshop Database Context:
-${dbContext}`
+    systemInstruction: systemInstruction,
+    generationConfig: generationConfig,
   });
 
-  // 3. Map conversation history & send message
+  // 3. Map conversation history & execute query
   try {
     const mappedHistory = (history || []).map(h => ({
       role: h.role === 'user' ? 'user' : 'model',
