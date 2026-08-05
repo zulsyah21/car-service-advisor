@@ -445,7 +445,7 @@
     }
 
     // ─── SAVE QUOTATION TO DATABASE ──────────────────────────────────────────
-    function saveQuotation() {
+    async function saveQuotation() {
         if (!currentUser) {
             window.showModal({
                 title: "Authentication Required",
@@ -494,7 +494,7 @@
         const allQuoteParts = window.getTable('quotationPartTable') || [];
         const today = new Date().toISOString().split('T')[0];
 
-        const executeSave = () => {
+        const executeSave = async () => {
             if (activeEditingQuoteID) {
                 // Updating existing quote
                 const index = allQuotes.findIndex(q => q.quoteID === activeEditingQuoteID);
@@ -527,20 +527,30 @@
                     window.saveTable('quotationPartTable', filteredParts);
 
                     // Save to MySQL DB
-                    fetch('/api/quotes', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            quoteID: activeEditingQuoteID,
-                            customerID: customerRecord.customerID,
-                            variantID: variantID,
-                            mileage: parseInt(rawMileage),
-                            region: region,
-                            totalCost: currentCalculatedTotal,
-                            quoteDate: today,
-                            items: dbItems
-                        })
-                    }).catch(err => console.error("Failed to sync updated quote to DB", err));
+                    try {
+                        const response = await fetch('/api/quotes', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                quoteID: activeEditingQuoteID,
+                                customerID: customerRecord.customerID,
+                                variantID: variantID,
+                                mileage: parseInt(rawMileage),
+                                region: region,
+                                totalCost: currentCalculatedTotal,
+                                quoteDate: today,
+                                items: dbItems
+                            })
+                        });
+                        if (!response.ok) {
+                            const errData = await response.json().catch(() => ({}));
+                            throw new Error(errData.error || `Server error ${response.status}`);
+                        }
+                    } catch (err) {
+                        console.error("Failed to sync updated quote to DB", err);
+                        window.showToast(`Warning: Quote updated locally but failed to sync to server: ${err.message}`, 'error');
+                        return;
+                    }
 
                     window.showToast(`Quotation ${activeEditingQuoteID} updated successfully!`, 'success');
                     activeEditingQuoteID = null; // Clear active editor state
@@ -549,19 +559,6 @@
                 // Generating new quote
                 const newQuoteID = "#Q" + String(Math.floor(Math.random() * 900000) + 100000);
 
-                allQuotes.unshift({
-                    quoteID: newQuoteID,
-                    customerID: customerRecord.customerID,
-                    variantID: variantID,
-                    date: today,
-                    mileage: parseInt(rawMileage),
-                    region: region,
-                    totalCost: currentCalculatedTotal
-                });
-
-                window.saveTable('quotationTable', allQuotes);
-
-                // Seed itemized parts mapping table
                 const dbItems = [];
                 currentGeneratedItems.forEach((item, index) => {
                     const newItem = {
@@ -574,26 +571,49 @@
                         itemType: item.type,
                         subtotal: item.subtotal
                     };
-                    allQuoteParts.push(newItem);
                     dbItems.push(newItem);
                 });
-                window.saveTable('quotationPartTable', allQuoteParts);
 
-                // Save to MySQL DB
-                fetch('/api/quotes', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        quoteID: newQuoteID,
-                        customerID: customerRecord.customerID,
-                        variantID: variantID,
-                        mileage: parseInt(rawMileage),
-                        region: region,
-                        totalCost: currentCalculatedTotal,
-                        quoteDate: today,
-                        items: dbItems
-                    })
-                }).catch(err => console.error("Failed to sync new quote to DB", err));
+                // Save to MySQL DB first — only persist locally if server save succeeds
+                try {
+                    const response = await fetch('/api/quotes', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            quoteID: newQuoteID,
+                            customerID: customerRecord.customerID,
+                            variantID: variantID,
+                            mileage: parseInt(rawMileage),
+                            region: region,
+                            totalCost: currentCalculatedTotal,
+                            quoteDate: today,
+                            items: dbItems
+                        })
+                    });
+                    if (!response.ok) {
+                        const errData = await response.json().catch(() => ({}));
+                        throw new Error(errData.error || `Server error ${response.status}`);
+                    }
+                } catch (err) {
+                    console.error("Failed to save quote to DB", err);
+                    window.showToast(`Failed to save quotation to database: ${err.message}`, 'error');
+                    return;
+                }
+
+                // Persist to localStorage only after DB confirms success
+                allQuotes.unshift({
+                    quoteID: newQuoteID,
+                    customerID: customerRecord.customerID,
+                    variantID: variantID,
+                    date: today,
+                    mileage: parseInt(rawMileage),
+                    region: region,
+                    totalCost: currentCalculatedTotal
+                });
+                window.saveTable('quotationTable', allQuotes);
+
+                dbItems.forEach(item => allQuoteParts.push(item));
+                window.saveTable('quotationPartTable', allQuoteParts);
 
                 window.showToast(`Quotation ${newQuoteID} created and saved successfully!`, 'success');
             }
@@ -613,7 +633,7 @@
                 type: "warning",
                 confirmText: "Save Changes",
                 cancelText: "Discard",
-                onConfirm: executeSave
+                onConfirm: () => executeSave()
             });
         } else {
             executeSave();

@@ -297,10 +297,13 @@ ${dbContext}`
 
 // Create Quotation endpoint
 app.post('/api/quotes', async (req, res) => {
-  const { quoteID, customerID, variantID, mileage, region, totalCost, quoteDate, items } = req.body;
+  let { quoteID, customerID, variantID, mileage, region, totalCost, quoteDate, items } = req.body;
   if (!quoteID || !customerID || !variantID || !items || !Array.isArray(items)) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
+
+  // Normalize region value to match the DB ENUM('Peninsular','East Malaysia')
+  if (region === 'EM') region = 'East Malaysia';
 
   const connection = await pool.getConnection();
   try {
