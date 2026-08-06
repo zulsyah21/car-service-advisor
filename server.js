@@ -320,6 +320,32 @@ app.post('/api/quotes', async (req, res) => {
   try {
     await connection.beginTransaction();
 
+    // Resolve valid customerID from MySQL customers table (by customerID or userID)
+    let [custRows] = await connection.query(
+      'SELECT customerID FROM customers WHERE customerID = ? OR userID = ?',
+      [customerID, customerID]
+    );
+
+    let validCustomerID;
+    if (custRows.length > 0) {
+      validCustomerID = custRows[0].customerID;
+    } else {
+      // Auto-create customer record if user exists in users table
+      const [userRows] = await connection.query('SELECT userID FROM users WHERE userID = ?', [customerID]);
+      let targetUserID = userRows.length > 0 ? userRows[0].userID : null;
+
+      if (!targetUserID) {
+        const [anyUser] = await connection.query('SELECT userID FROM users LIMIT 1');
+        targetUserID = anyUser.length > 0 ? anyUser[0].userID : 'u2';
+      }
+
+      validCustomerID = 'c' + Date.now().toString(36);
+      await connection.query(
+        'INSERT INTO customers (customerID, userID) VALUES (?, ?)',
+        [validCustomerID, targetUserID]
+      );
+    }
+
     // 1. Check if it's an update or insert
     const [existing] = await connection.query('SELECT quoteID FROM quotations WHERE quoteID = ?', [quoteID]);
     
@@ -335,7 +361,7 @@ app.post('/api/quotes', async (req, res) => {
       // Insert
       await connection.query(
         'INSERT INTO quotations (quoteID, customerID, variantID, mileage, region, totalCost, quoteDate) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [quoteID, customerID, variantID, mileage, region, totalCost, quoteDate]
+        [quoteID, validCustomerID, variantID, mileage, region, totalCost, quoteDate]
       );
     }
 
@@ -352,7 +378,7 @@ app.post('/api/quotes', async (req, res) => {
   } catch (err) {
     await connection.rollback();
     console.error('Failed to save quote:', err);
-    res.status(500).json({ error: 'Failed to save quotation to database' });
+    res.status(500).json({ error: err.message || 'Failed to save quotation to database' });
   } finally {
     connection.release();
   }
